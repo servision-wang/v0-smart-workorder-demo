@@ -355,8 +355,8 @@ export function WorkOrderProvider({ children }: { children: ReactNode }) {
         return true
       },
 
-      // EPC part selection by callNo or description
-      selectEpcPart: (callNo?: string, description?: string): { success: boolean; partName?: string } => {
+      // EPC part selection by callNo, partNo, or description
+      selectEpcPart: (callNo?: string, partNo?: string, description?: string): { success: boolean; partName?: string } => {
         // If EPC is not open, can't select
         if (!epcOpen) {
           return { success: false }
@@ -372,7 +372,17 @@ export function WorkOrderProvider({ children }: { children: ReactNode }) {
           }
         }
 
-        // If not found by callNo, search by description
+        // If not found by callNo, search by partNo
+        if (!foundPart && partNo) {
+          const normalizedPartNo = partNo.trim()
+          foundPart = epcParts.find(p =>
+            p.partNo === normalizedPartNo ||
+            p.partNo.includes(normalizedPartNo) ||
+            normalizedPartNo.includes(p.partNo)
+          )
+        }
+
+        // If not found by callNo or partNo, search by description
         if (!foundPart && description) {
           const normalizedDesc = description.toLowerCase().trim()
           foundPart = epcParts.find(p =>

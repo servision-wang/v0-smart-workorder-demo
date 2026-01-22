@@ -136,13 +136,17 @@ export const toolDefinitions: ToolDefinition[] = [
   {
     type: 'function',
     name: 'select_epc_part',
-    description: '在EPC配件目录中选择配件。当用户说"选择第N个"、"选第N行"、"选择XX配件"、"我要这个"时调用',
+    description: '在EPC配件目录中选择配件。当用户说"选择第N个"、"选第N行"、"第N个配件"、"帮我选第N个"、"我要第N个"、"给我第N个"、"选择XX配件"、"我要这个"，或者说配件号码（如"12656876"、"一二六五六八七六"）时调用',
     parameters: {
       type: 'object',
       properties: {
         call_no: {
           type: 'string',
-          description: '配件的呼叫号（callNo），如"1"、"2"、"3"等。当用户说"选择第一个"、"选第2个"时使用'
+          description: '配件的呼叫号（callNo），如"1"、"2"、"3"等。当用户说"选择第一个"、"选第2个"、"第二个配件"、"帮我选第三个"、"我要第二个"、"给我第一个"等表达时使用'
+        },
+        part_no: {
+          type: 'string',
+          description: '配件号码（partNo），如"12656876"、"11570662"、"01453658"等。当用户读出一串数字（如"12656876"或"一二六五六八七六"）时使用。注意：用户可能用中文或数字读出号码，需要转换为阿拉伯数字'
         },
         description: {
           type: 'string',
@@ -250,7 +254,8 @@ export const systemInstructions = `你是一个汽车售后配件技术信息领
 - "打开EPC"、"查找替换件" → 调用 open_epc
 
 ### EPC配件目录中选择配件
-- "选择第一个"、"选第2个"、"选择第3行" → 调用 select_epc_part (call_no)
+- "选择第一个"、"选第2个"、"选择第3行"、"第二个配件"、"帮我选第三个"、"第一个"、"我要第二个"、"给我第一个" → 调用 select_epc_part (call_no)
+- "12656876"、"一二六五六八七六"、"配件号12656876"、"我要11570662" → 调用 select_epc_part (part_no)
 - "选择活塞"、"我要连杆"、"选轴承" → 调用 select_epc_part (description)
 - "确认选择"、"就这个"、"选好了" → 调用 confirm_epc_selection
 - "返回" → 调用 go_back（关闭EPC目录）

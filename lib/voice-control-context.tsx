@@ -63,7 +63,7 @@ interface VoiceControlContextType {
     addRepairItems: (items: string) => void
     openEpc: (partName: string) => boolean
     // EPC selection handlers
-    selectEpcPart: (callNo?: string, description?: string) => { success: boolean; partName?: string }
+    selectEpcPart: (callNo?: string, partNo?: string, description?: string) => { success: boolean; partName?: string }
     confirmEpcSelection: () => boolean
   } | null
   setWorkOrderHandlers: (handlers: VoiceControlContextType['workOrderHandlers']) => void
@@ -224,13 +224,14 @@ export function VoiceControlProvider({ children }: { children: ReactNode }) {
       // Select EPC part
       case 'select_epc_part': {
         const callNo = args.call_no as string | undefined
+        const partNo = args.part_no as string | undefined
         const description = args.description as string | undefined
 
         if (!workOrderHandlersRef.current?.selectEpcPart) {
           return { success: false, message: 'EPC目录未打开' }
         }
 
-        const result = workOrderHandlersRef.current.selectEpcPart(callNo, description)
+        const result = workOrderHandlersRef.current.selectEpcPart(callNo, partNo, description)
         if (result.success) {
           return { success: true, message: `好的，已选择${result.partName}` }
         }

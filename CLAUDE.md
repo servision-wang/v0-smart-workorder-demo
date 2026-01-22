@@ -9,10 +9,12 @@ Smart Work Order (智能工单录入) - A Chinese-language automotive repair wor
 ## Commands
 
 ```bash
-pnpm dev      # Start development server
-pnpm build    # Production build
-pnpm lint     # Run ESLint
+npm run dev      # Start development server
+npm run build    # Production build
+npm run lint     # Run ESLint
 ```
+
+Note: Project has both `pnpm-lock.yaml` and `package-lock.json`; either package manager works.
 
 ## Environment Variables
 
@@ -30,7 +32,9 @@ OPENAI_API_KEY=sk-...   # For voice control via OpenAI Realtime API
 - OpenAI Realtime API (WebRTC) for voice control
 
 ### Application Flow
-Single-page app with state-based navigation in `app/page.tsx`. Flow: `voice-input` → `recognition` → (optional) `epc-catalogue` → `preview` → `success`
+Single-page app with state-based navigation in [app/page.tsx](app/page.tsx). Flow: `voice-input` → shimmer transition → `recognition` → (optional) `epc-catalogue` → `preview` → `success`
+
+During voice-input → recognition transition, a [ShimmerTransition](components/shimmer-transition.tsx) displays while the `/api/extract-parts` endpoint processes the transcript.
 
 Page components in `components/`:
 - `voice-input-page.tsx` - Voice/text input for repair descriptions
@@ -55,7 +59,9 @@ Page components in `components/`:
 
 ### Voice Control System
 
-**API Route**: `app/api/realtime/session/route.ts` - Creates ephemeral tokens for WebRTC connection
+**API Routes**:
+- `app/api/realtime/session/route.ts` - Creates ephemeral tokens for WebRTC connection with OpenAI Realtime API
+- `app/api/extract-parts/route.ts` - Extracts structured parts data from transcript text using GPT-4o-mini during voice-input → recognition transition
 
 **Tool Definitions**: `lib/tools-definition.ts` - All voice commands the AI can execute:
 - Navigation: `click_confirm`, `go_back`, `new_order`
@@ -71,4 +77,6 @@ Page components in `components/`:
 
 ### Build Notes
 - `next.config.mjs` has `ignoreBuildErrors: true` - type errors won't fail builds
+- Images are unoptimized (`images: { unoptimized: true }`) for v0.app compatibility
+- No test suite in project
 - Project auto-syncs with v0.app deployments
