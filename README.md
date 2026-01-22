@@ -1,4 +1,5 @@
 # Smart work order app
+<img width="574" height="922" alt="image" src="https://github.com/user-attachments/assets/710e5f95-0f69-46d7-9b96-298b4338a34b" />
 
 *Automatically synced with your [v0.app](https://v0.app) deployments*
 
