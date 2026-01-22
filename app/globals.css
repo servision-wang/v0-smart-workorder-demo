@@ -39,36 +39,36 @@
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
 
-  /* User's enterprise theme - overrides default shadcn/ui and adds custom */
-  --background: oklch(0.12 0.01 260);
-  --foreground: oklch(0.95 0 0);
-  --card: oklch(0.16 0.01 260);
-  --card-foreground: oklch(0.95 0 0);
-  --popover: oklch(0.16 0.01 260);
-  --popover-foreground: oklch(0.95 0 0);
-  --primary: oklch(0.75 0.15 190);
-  --primary-foreground: oklch(0.12 0.01 260);
-  --secondary: oklch(0.22 0.01 260);
-  --secondary-foreground: oklch(0.85 0 0);
-  --muted: oklch(0.20 0.01 260);
-  --muted-foreground: oklch(0.65 0 0);
-  --accent: oklch(0.75 0.15 190);
-  --accent-foreground: oklch(0.12 0.01 260);
-  --destructive: oklch(0.55 0.2 25);
-  --destructive-foreground: oklch(0.95 0 0);
-  --border: oklch(0.25 0.01 260);
-  --input: oklch(0.20 0.01 260);
-  --ring: oklch(0.75 0.15 190);
-  --chart-1: oklch(0.75 0.15 190);
-  --chart-2: oklch(0.65 0.15 145);
-  --chart-3: oklch(0.55 0.12 280);
-  --chart-4: oklch(0.70 0.18 65);
-  --chart-5: oklch(0.60 0.20 340);
-  --radius: 0.5rem; /* User's radius takes precedence */
-  --success: oklch(0.70 0.18 145);
-  --success-foreground: oklch(0.12 0.01 260);
-  --warning: oklch(0.75 0.18 65);
-  --warning-foreground: oklch(0.12 0.01 260);
+  /* User's enterprise light theme with teal/cyan accent */
+  --background: oklch(0.98 0.005 210);
+  --foreground: oklch(0.20 0.02 260);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.20 0.02 260);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.20 0.02 260);
+  --primary: oklch(0.55 0.15 180);
+  --primary-foreground: oklch(0.99 0 0);
+  --secondary: oklch(0.95 0.01 210);
+  --secondary-foreground: oklch(0.30 0.02 260);
+  --muted: oklch(0.94 0.01 210);
+  --muted-foreground: oklch(0.45 0.02 260);
+  --accent: oklch(0.55 0.15 180);
+  --accent-foreground: oklch(0.99 0 0);
+  --destructive: oklch(0.55 0.22 25);
+  --destructive-foreground: oklch(0.99 0 0);
+  --border: oklch(0.88 0.01 210);
+  --input: oklch(0.92 0.01 210);
+  --ring: oklch(0.55 0.15 180);
+  --chart-1: oklch(0.55 0.15 180);
+  --chart-2: oklch(0.60 0.15 145);
+  --chart-3: oklch(0.50 0.12 280);
+  --chart-4: oklch(0.65 0.18 65);
+  --chart-5: oklch(0.55 0.20 340);
+  --radius: 0.625rem;
+  --success: oklch(0.60 0.18 145);
+  --success-foreground: oklch(0.99 0 0);
+  --warning: oklch(0.70 0.18 65);
+  --warning-foreground: oklch(0.20 0.02 260);
 }
 
 .dark {
@@ -106,26 +106,26 @@
   --sidebar-border: oklch(0.269 0 0);
   --sidebar-ring: oklch(0.439 0 0);
 
-  /* User's enterprise theme - always dark, overrides default shadcn/ui */
-  --background: oklch(0.12 0.01 260);
+  /* User's enterprise dark theme with teal/cyan accent */
+  --background: oklch(0.15 0.015 210);
   --foreground: oklch(0.95 0 0);
-  --card: oklch(0.16 0.01 260);
+  --card: oklch(0.18 0.015 210);
   --card-foreground: oklch(0.95 0 0);
-  --popover: oklch(0.16 0.01 260);
+  --popover: oklch(0.18 0.015 210);
   --popover-foreground: oklch(0.95 0 0);
-  --primary: oklch(0.75 0.15 190);
-  --primary-foreground: oklch(0.12 0.01 260);
-  --secondary: oklch(0.22 0.01 260);
+  --primary: oklch(0.65 0.15 180);
+  --primary-foreground: oklch(0.15 0.015 210);
+  --secondary: oklch(0.25 0.015 210);
   --secondary-foreground: oklch(0.85 0 0);
-  --muted: oklch(0.20 0.01 260);
-  --muted-foreground: oklch(0.65 0 0);
-  --accent: oklch(0.75 0.15 190);
-  --accent-foreground: oklch(0.12 0.01 260);
-  --destructive: oklch(0.55 0.2 25);
+  --muted: oklch(0.22 0.015 210);
+  --muted-foreground: oklch(0.60 0 0);
+  --accent: oklch(0.65 0.15 180);
+  --accent-foreground: oklch(0.15 0.015 210);
+  --destructive: oklch(0.55 0.22 25);
   --destructive-foreground: oklch(0.95 0 0);
-  --border: oklch(0.25 0.01 260);
-  --input: oklch(0.20 0.01 260);
-  --ring: oklch(0.75 0.15 190);
+  --border: oklch(0.30 0.015 210);
+  --input: oklch(0.22 0.015 210);
+  --ring: oklch(0.65 0.15 180);
 }
 
 @theme inline {
@@ -200,4 +200,71 @@
 
 ::-webkit-scrollbar-thumb:hover {
   background: var(--muted-foreground);
+}
+
+/* Shimmer transition animations */
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+@keyframes shimmer-line {
+  0% { transform: translateX(-100%); opacity: 0; }
+  50% { opacity: 1; }
+  100% { transform: translateX(100%); opacity: 0; }
+}
+
+@keyframes float-particle {
+  0%, 100% { 
+    transform: translateY(0) scale(1); 
+    opacity: 0.6; 
+  }
+  50% { 
+    transform: translateY(-20px) scale(1.5); 
+    opacity: 1; 
+  }
+}
+
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes spin-slow-reverse {
+  from { transform: rotate(360deg); }
+  to { transform: rotate(0deg); }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: scale(0.8); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.animate-shimmer {
+  animation: shimmer 1.5s infinite;
+}
+
+.animate-shimmer-line {
+  animation: shimmer-line 1.5s infinite;
+}
+
+.animate-float-particle {
+  animation: float-particle 3s ease-in-out infinite;
+}
+
+.animate-spin-slow {
+  animation: spin-slow 4s linear infinite;
+}
+
+.animate-spin-slow-reverse {
+  animation: spin-slow-reverse 3s linear infinite;
+}
+
+.animate-fade-in {
+  animation: fade-in 0.3s ease-out forwards;
+}
+
+/* Highlight class for recognized text */
+.highlight {
+  color: var(--primary);
 }

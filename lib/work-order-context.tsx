@@ -12,6 +12,7 @@ interface WorkOrderContextType {
   togglePartAction: (id: string, action: '更换' | '钣金' | '喷漆') => void
   updatePartQuantity: (id: string, quantity: number) => void
   updateLaborHours: (id: string, hours: number) => void
+  replacePart: (id: string, newPart: { name: string; partNo: string; price: number }) => void
   getSelectedParts: () => Part[]
   getTotalPartsPrice: () => number
   getTotalLaborPrice: () => number
@@ -55,6 +56,14 @@ export function WorkOrderProvider({ children }: { children: ReactNode }) {
     ))
   }
 
+  const replacePart = (id: string, newPart: { name: string; partNo: string; price: number }) => {
+    setParts(prev => prev.map(part => 
+      part.id === id 
+        ? { ...part, name: newPart.name, partNo: newPart.partNo, price: newPart.price } 
+        : part
+    ))
+  }
+
   const getSelectedParts = () => parts.filter(part => part.selected)
 
   const getTotalPartsPrice = () => 
@@ -75,6 +84,7 @@ export function WorkOrderProvider({ children }: { children: ReactNode }) {
       togglePartAction,
       updatePartQuantity,
       updateLaborHours,
+      replacePart,
       getSelectedParts,
       getTotalPartsPrice,
       getTotalLaborPrice,

@@ -1,9 +1,11 @@
 'use client'
 
-import { ChevronLeft, Check, RefreshCw, Sparkles } from 'lucide-react'
+import { useState } from 'react'
+import { ChevronLeft, Check, Search, ArrowLeftRight, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useWorkOrder } from '@/lib/work-order-context'
 import { demoVehicle, highlightedDescription } from '@/lib/work-order-data'
+import { EPCCataloguePage } from './epc-catalogue-page'
 
 interface RecognitionResultsPageProps {
   onBack: () => void
@@ -11,9 +13,39 @@ interface RecognitionResultsPageProps {
 }
 
 export function RecognitionResultsPage({ onBack, onAddToWorkOrder }: RecognitionResultsPageProps) {
-  const { parts, togglePartSelection, togglePartAction } = useWorkOrder()
+  const { parts, togglePartSelection, togglePartAction, replacePart } = useWorkOrder()
+  const [epcOpen, setEpcOpen] = useState(false)
+  const [replacingPartId, setReplacingPartId] = useState<string | null>(null)
 
   const selectedCount = parts.filter(p => p.selected).length
+
+  const handleOpenEPC = (partId: string) => {
+    setReplacingPartId(partId)
+    setEpcOpen(true)
+  }
+
+  const handleSelectFromEPC = (newPart: { name: string; partNo: string; price: number }) => {
+    if (replacingPartId) {
+      replacePart(replacingPartId, newPart)
+      setEpcOpen(false)
+      setReplacingPartId(null)
+    }
+  }
+
+  // Show EPC catalogue when open
+  if (epcOpen) {
+    const currentPart = parts.find(p => p.id === replacingPartId)
+    return (
+      <EPCCataloguePage 
+        partName={currentPart?.name || ''}
+        onBack={() => {
+          setEpcOpen(false)
+          setReplacingPartId(null)
+        }}
+        onSelectPart={handleSelectFromEPC}
+      />
+    )
+  }
 
   return (
     <div className="flex flex-col h-full bg-background">
@@ -109,9 +141,16 @@ export function RecognitionResultsPage({ onBack, onAddToWorkOrder }: Recognition
                   </div>
                 </div>
 
-                {/* Replace Icon */}
-                <button className="p-2 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg transition-colors">
-                  <RefreshCw className="w-4 h-4" />
+                {/* EPC Search/Replace Icon */}
+                <button 
+                  onClick={() => handleOpenEPC(part.id)}
+                  className="p-2 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg transition-colors group relative"
+                  title="从EPC目录查找替换"
+                >
+                  <div className="relative">
+                    <Search className="w-4 h-4" />
+                    <ArrowLeftRight className="w-2.5 h-2.5 absolute -bottom-0.5 -right-0.5 text-primary opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </div>
                 </button>
               </div>
             </div>
