@@ -1,10 +1,12 @@
 'use client'
 
+import { useMemo } from 'react'
 import { ChevronLeft, Check, Search, ArrowLeftRight, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { FloatingVoiceButton } from '@/components/floating-voice-button'
 import { useWorkOrder } from '@/lib/work-order-context'
-import { demoVehicle, highlightedDescription } from '@/lib/work-order-data'
+import { useVoiceControl } from '@/lib/voice-control-context'
+import { demoVehicle } from '@/lib/work-order-data'
 import { EPCCataloguePage } from './epc-catalogue-page'
 
 interface RecognitionResultsPageProps {
@@ -23,8 +25,48 @@ export function RecognitionResultsPage({ onBack, onAddToWorkOrder }: Recognition
     openEpcForPart,
     closeEpc
   } = useWorkOrder()
+  const { transcriptHistory } = useVoiceControl()
 
   const selectedCount = parts.filter(p => p.selected).length
+
+  // Create highlighted description from transcript and extracted parts (using React elements for safety)
+  const highlightedElements = useMemo(() => {
+    const text = transcriptHistory.join(' ')
+    if (!text.trim()) return [<span key="empty">暂无识别内容</span>]
+
+    // Collect all terms to highlight: part names, categories, and actions
+    const partTerms = parts.flatMap(p => [p.name, p.category])
+    const actionTerms = ['更换', '钣金', '喷漆', '换', '修', '喷']
+    const allTerms = [...new Set([...partTerms, ...actionTerms])]
+
+    // Sort by length (longest first) to avoid partial matches
+    allTerms.sort((a, b) => b.length - a.length)
+
+    // Escape special regex characters
+    const escapeRegex = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
+    // Build regex pattern
+    const pattern = allTerms.map(escapeRegex).join('|')
+    if (!pattern) return [<span key="text">{text}</span>]
+
+    // Split text by matches and create React elements
+    const regex = new RegExp(`(${pattern})`, 'g')
+    const segments = text.split(regex)
+
+    return segments.map((segment, index) => {
+      if (!segment) return null
+      const isAction = actionTerms.includes(segment)
+      const isPart = partTerms.includes(segment)
+
+      if (isAction) {
+        return <span key={index} className="text-primary font-semibold">{segment}</span>
+      }
+      if (isPart) {
+        return <span key={index} className="text-primary font-medium bg-primary/10 px-1 rounded">{segment}</span>
+      }
+      return <span key={index}>{segment}</span>
+    })
+  }, [transcriptHistory, parts])
 
   const handleOpenEPC = (partId: string) => {
     openEpcForPart(partId)
@@ -74,13 +116,12 @@ export function RecognitionResultsPage({ onBack, onAddToWorkOrder }: Recognition
         </div>
       </div>
 
-      {/* Highlighted Description - Note: highlightedDescription is a static constant, safe for innerHTML */}
+      {/* Highlighted Description - Generated from transcript with part name highlighting */}
       <div className="mx-4 mt-3 p-4 bg-card rounded-xl border border-border">
         <p className="text-xs text-muted-foreground uppercase tracking-wider mb-2">识别内容</p>
-        <p
-          className="text-sm text-foreground leading-relaxed [&_.highlight]:text-primary [&_.highlight]:font-medium"
-          dangerouslySetInnerHTML={{ __html: highlightedDescription }}
-        />
+        <p className="text-sm text-foreground leading-relaxed">
+          {highlightedElements}
+        </p>
       </div>
 
       {/* Parts List */}

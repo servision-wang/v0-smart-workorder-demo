@@ -36,11 +36,19 @@ export const epcParts: EPCPart[] = [
   { id: 'e14', callNo: 10, partNo: '11546565', group: '00.056', position: '-', description: '曲轴皮带轮螺栓 CR/SHF BRG CAP (一次性)', usage: 'CK1 (L84,L87)', year: '2023-2025', qty: 10, price: 35.00 },
 ]
 
+// Input type for extracted parts from AI
+export interface ExtractedPartInput {
+  name: string
+  action: ('更换' | '钣金' | '喷漆')[]
+  category: string
+}
+
 interface WorkOrderContextType {
   parts: Part[]
   laborItems: LaborItem[]
   setParts: (parts: Part[]) => void
   setLaborItems: (items: LaborItem[]) => void
+  setExtractedParts: (extractedParts: ExtractedPartInput[]) => void
   togglePartSelection: (id: string) => void
   togglePartAction: (id: string, action: '更换' | '钣金' | '喷漆') => void
   updatePartQuantity: (id: string, quantity: number) => void
@@ -85,6 +93,54 @@ export function WorkOrderProvider({ children }: { children: ReactNode }) {
     setEpcPartId(null)
     setSelectedEpcPartId(null)
   }, [])
+
+  // Generate random part number in format "XXX XXX XXX"
+  const generatePartNo = useCallback(() => {
+    const seg1 = Math.floor(Math.random() * 900 + 100).toString()
+    const seg2 = Math.floor(Math.random() * 900 + 100).toString()
+    const seg3 = Math.floor(Math.random() * 900 + 100).toString()
+    return `${seg1} ${seg2} ${seg3}`
+  }, [])
+
+  // Generate random price between min and max
+  const generatePrice = useCallback((min: number, max: number) => {
+    return Math.round((Math.random() * (max - min) + min) / 10) * 10
+  }, [])
+
+  // Set extracted parts from AI and generate corresponding labor items
+  const setExtractedParts = useCallback((extractedParts: ExtractedPartInput[]) => {
+    // Convert extracted parts to full Part objects
+    const newParts: Part[] = extractedParts.map((ep, index) => ({
+      id: `ai-${index + 1}`,
+      name: ep.name,
+      partNo: generatePartNo(),
+      price: generatePrice(200, 2500),
+      quantity: 1,
+      category: ep.category || ep.name,
+      actions: ['更换', '钣金', '喷漆'] as const,
+      selectedActions: ep.action.length > 0 ? ep.action : ['更换'],
+      selected: true,
+    }))
+
+    // Generate labor items based on parts and their actions
+    const newLaborItems: LaborItem[] = []
+    extractedParts.forEach((ep, index) => {
+      const actions = ep.action.length > 0 ? ep.action : ['更换']
+      actions.forEach((action, actionIndex) => {
+        const baseHours = action === '更换' ? 1.5 : action === '钣金' ? 2.5 : 2.0
+        const hours = Math.round((baseHours + Math.random() * 1.5) * 10) / 10
+        newLaborItems.push({
+          id: `labor-${index + 1}-${actionIndex}`,
+          name: `${ep.name}${action}`,
+          hourlyRate: 100,
+          hours,
+        })
+      })
+    })
+
+    setParts(newParts)
+    setLaborItems(newLaborItems)
+  }, [generatePartNo, generatePrice])
 
   // Confirm EPC selection and replace the original part
   const confirmEpcSelection = useCallback(() => {
@@ -350,6 +406,7 @@ export function WorkOrderProvider({ children }: { children: ReactNode }) {
       laborItems,
       setParts,
       setLaborItems,
+      setExtractedParts,
       togglePartSelection,
       togglePartAction,
       updatePartQuantity,
