@@ -2,6 +2,7 @@
 
 import { ChevronLeft, Plus, Minus, Trash2, Package, Clock } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { FloatingVoiceButton } from '@/components/floating-voice-button'
 import { useWorkOrder } from '@/lib/work-order-context'
 import { demoVehicle } from '@/lib/work-order-data'
 
@@ -175,6 +176,11 @@ export function WorkOrderPreviewPage({ onBack, onGenerateOrder }: WorkOrderPrevi
           生成工单
         </Button>
       </div>
+
+      {/* Floating Voice Button */}
+      <FloatingVoiceButton
+        hints={['进气格栅数量改为2', '前挡风玻璃工时3小时', '生成工单', '返回']}
+      />
     </div>
   )
 }

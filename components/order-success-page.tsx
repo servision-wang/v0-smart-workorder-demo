@@ -2,6 +2,7 @@
 
 import { CheckCircle, FileText, PlusCircle, ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { FloatingVoiceButton } from '@/components/floating-voice-button'
 import { demoVehicle } from '@/lib/work-order-data'
 
 interface OrderSuccessPageProps {
@@ -92,6 +93,11 @@ export function OrderSuccessPage({ onNewOrder }: OrderSuccessPageProps) {
           新建工单
         </Button>
       </div>
+
+      {/* Floating Voice Button */}
+      <FloatingVoiceButton
+        hints={['新建工单', '再来一单']}
+      />
     </div>
   )
 }

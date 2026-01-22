@@ -3,37 +3,8 @@
 import { useState } from 'react'
 import { ChevronLeft, Search, ZoomIn, ZoomOut, RotateCcw, Check, Package, Filter, ChevronDown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-
-interface EPCPart {
-  id: string
-  callNo: number
-  partNo: string
-  group: string
-  position: string
-  description: string
-  usage: string
-  year: string
-  qty: number
-  price: number
-}
-
-// Mock EPC data based on the screenshot - engine/cylinder parts
-const epcParts: EPCPart[] = [
-  { id: 'e1', callNo: 1, partNo: '12656876', group: '00.629', position: 'R', description: '活塞套件 ENG (INCLS 54,55) (STD SIZE)', usage: 'CK1 (06) (L84)', year: '2021-2025', qty: 4, price: 580.00 },
-  { id: 'e2', callNo: 1, partNo: '12656877', group: '00.629', position: 'L', description: '活塞套件 ENG (INCL 54,55) (STD SIZE)', usage: 'CK1 (06) (L84)', year: '2021-2025', qty: 4, price: 580.00 },
-  { id: 'e3', callNo: 1, partNo: '12659283', group: '00.629', position: 'L', description: '活塞套件 ENG (INCLS 54,55) (.5MM O/S)', usage: 'CK1 (06) (L84)', year: '2021-2025', qty: 4, price: 620.00 },
-  { id: 'e4', callNo: 1, partNo: '12659284', group: '00.629', position: 'R', description: '活塞套件 ENG (INCLS 54,55) (.5MM O/S)', usage: 'CK1 (06) (L84)', year: '2021-2025', qty: 4, price: 620.00 },
-  { id: 'e5', callNo: 2, partNo: '12691926', group: '00.643', position: '-', description: '活塞环套件 PSTN (STD SIZE)', usage: 'CK1 (06) (L84)', year: '2021-2025', qty: 8, price: 320.00 },
-  { id: 'e6', callNo: 2, partNo: '12691927', group: '00.643', position: '-', description: '活塞环套件 PSTN (.5MM O/S)', usage: 'CK1 (06) (L84)', year: '2021-2025', qty: 1, price: 320.00 },
-  { id: 'e7', callNo: 3, partNo: '12649190', group: '00.603', position: '-', description: '连杆 CONN (INCLS 4)', usage: 'CK1 (06) (L84)', year: '2021-2025', qty: 8, price: 450.00 },
-  { id: 'e8', callNo: 4, partNo: '11570662', group: '00.623', position: '-', description: '连杆螺栓 (3件套) (M9X44,13) (一次性)', usage: 'CK1 (06) (L84)', year: '2021-2025', qty: 16, price: 85.00 },
-  { id: 'e9', callNo: 5, partNo: 'NS', group: '-', position: '-', description: '轴承 CM/SHF (* KIT2)', usage: '-', year: '2021-2025', qty: 1, price: 280.00 },
-  { id: 'e10', callNo: 6, partNo: '12679049', group: '00.539', position: '-', description: '轴承 CM/SHF (位置 #4 (V6) 或 #5 (V8))', usage: 'CK1 (06) (L84,L87)', year: '2021-2025', qty: 1, price: 320.00 },
-  { id: 'e11', callNo: 7, partNo: '01453658', group: '00.685', position: '-', description: '定位销 TRANS LOC (5/8 X 1 3/16)', usage: 'CK1 (06) (L84,MHS)', year: '2023-2025', qty: 2, price: 45.00 },
-  { id: 'e12', callNo: 8, partNo: '12661074', group: '01.531', position: '-', description: '机油道堵塞 ENG BLK OIL GAL (INCLS 9)', usage: 'CK1 (06) (L84,L87)', year: '2021-2025', qty: 1, price: 65.00 },
-  { id: 'e13', callNo: 9, partNo: '12638432', group: '01.531', position: '-', description: '密封圈 ENG BLK OIL GAL PLUG O RING (一次性)', usage: 'CK1 (06)', year: '2021-2025', qty: 1, price: 28.00 },
-  { id: 'e14', callNo: 10, partNo: '11546565', group: '00.056', position: '-', description: '曲轴皮带轮螺栓 CR/SHF BRG CAP (一次性)', usage: 'CK1 (L84,L87)', year: '2023-2025', qty: 10, price: 35.00 },
-]
+import { FloatingVoiceButton } from '@/components/floating-voice-button'
+import { useWorkOrder, epcParts } from '@/lib/work-order-context'
 
 interface EPCCataloguePageProps {
   partName: string
@@ -43,9 +14,11 @@ interface EPCCataloguePageProps {
 
 export function EPCCataloguePage({ partName, onBack, onSelectPart }: EPCCataloguePageProps) {
   const [searchTerm, setSearchTerm] = useState('')
-  const [selectedPartId, setSelectedPartId] = useState<string | null>(null)
   const [zoom, setZoom] = useState(100)
   const [showFilters, setShowFilters] = useState(false)
+
+  // Use context for selection state (for voice control)
+  const { selectedEpcPartId, setSelectedEpcPartId, confirmEpcSelection } = useWorkOrder()
 
   const filteredParts = epcParts.filter(part => 
     part.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -53,13 +26,10 @@ export function EPCCataloguePage({ partName, onBack, onSelectPart }: EPCCatalogu
   )
 
   const handleSelectPart = () => {
-    const part = epcParts.find(p => p.id === selectedPartId)
+    const part = epcParts.find(p => p.id === selectedEpcPartId)
     if (part) {
-      onSelectPart({
-        name: part.description,
-        partNo: part.partNo,
-        price: part.price
-      })
+      // Use context's confirmEpcSelection which handles the replacement
+      confirmEpcSelection()
     }
   }
 
@@ -176,9 +146,9 @@ export function EPCCataloguePage({ partName, onBack, onSelectPart }: EPCCatalogu
           {filteredParts.map((part) => (
             <button
               key={part.id}
-              onClick={() => setSelectedPartId(selectedPartId === part.id ? null : part.id)}
+              onClick={() => setSelectedEpcPartId(selectedEpcPartId === part.id ? null : part.id)}
               className={`w-full px-4 py-3 text-left transition-all ${
-                selectedPartId === part.id 
+                selectedEpcPartId === part.id 
                   ? 'bg-primary/10 border-l-2 border-l-primary' 
                   : 'hover:bg-secondary/50'
               }`}
@@ -203,11 +173,11 @@ export function EPCCataloguePage({ partName, onBack, onSelectPart }: EPCCatalogu
                 </div>
                 <div className="col-span-1 flex justify-center">
                   <div className={`w-5 h-5 rounded-md flex items-center justify-center transition-all ${
-                    selectedPartId === part.id 
+                    selectedEpcPartId === part.id 
                       ? 'bg-primary text-primary-foreground' 
                       : 'border border-muted-foreground/30'
                   }`}>
-                    {selectedPartId === part.id && <Check className="w-3 h-3" />}
+                    {selectedEpcPartId === part.id && <Check className="w-3 h-3" />}
                   </div>
                 </div>
               </div>
@@ -218,17 +188,17 @@ export function EPCCataloguePage({ partName, onBack, onSelectPart }: EPCCatalogu
 
       {/* Footer with selection info */}
       <div className="px-4 py-4 border-t border-border bg-card">
-        {selectedPartId ? (
+        {selectedEpcPartId ? (
           <div className="mb-3 p-3 bg-primary/5 rounded-lg border border-primary/20">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs text-muted-foreground">已选择</p>
                 <p className="text-sm font-medium text-foreground mt-0.5">
-                  {epcParts.find(p => p.id === selectedPartId)?.description}
+                  {epcParts.find(p => p.id === selectedEpcPartId)?.description}
                 </p>
               </div>
               <span className="text-lg font-semibold text-primary">
-                ¥{epcParts.find(p => p.id === selectedPartId)?.price.toFixed(2)}
+                ¥{epcParts.find(p => p.id === selectedEpcPartId)?.price.toFixed(2)}
               </span>
             </div>
           </div>
@@ -237,12 +207,17 @@ export function EPCCataloguePage({ partName, onBack, onSelectPart }: EPCCatalogu
         )}
         <Button
           onClick={handleSelectPart}
-          disabled={!selectedPartId}
+          disabled={!selectedEpcPartId}
           className="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-5 text-sm font-semibold rounded-xl shadow-lg shadow-primary/20 transition-all hover:shadow-xl hover:shadow-primary/30 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
         >
           确认选择并替换
         </Button>
       </div>
+
+      {/* Floating Voice Button */}
+      <FloatingVoiceButton
+        hints={['选择第一个', '选择活塞', '选择连杆', '确认选择', '返回']}
+      />
     </div>
   )
 }

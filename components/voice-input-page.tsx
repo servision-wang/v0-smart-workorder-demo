@@ -1,39 +1,17 @@
 'use client'
 
-import { useState, useRef } from 'react'
-import { ChevronLeft, Plus, Mic, X, Car, Waves } from 'lucide-react'
+import { ChevronLeft, Car, Waves } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { demoVehicle, demoVoiceInputs, type VoiceInput } from '@/lib/work-order-data'
+import { VoiceSession } from '@/components/voice-session'
+import { useVoiceControl } from '@/lib/voice-control-context'
+import { demoVehicle } from '@/lib/work-order-data'
 
 interface VoiceInputPageProps {
   onConfirm: () => void
 }
 
 export function VoiceInputPage({ onConfirm }: VoiceInputPageProps) {
-  const [inputs, setInputs] = useState<VoiceInput[]>(demoVoiceInputs)
-  const [isRecording, setIsRecording] = useState(false)
-  const [inputText, setInputText] = useState('')
-  const nextId = useRef(inputs.length + 1)
-
-  const handleRemoveInput = (id: number) => {
-    setInputs(prev => prev.filter(input => input.id !== id))
-  }
-
-  const handleAddInput = () => {
-    if (inputText.trim()) {
-      setInputs(prev => [...prev, { id: nextId.current++, text: inputText.trim() }])
-      setInputText('')
-    }
-  }
-
-  const handleMicClick = () => {
-    setIsRecording(!isRecording)
-    if (isRecording) {
-      setTimeout(() => {
-        setInputText('更换后保险杠。')
-      }, 500)
-    }
-  }
+  const { transcriptHistory, isConnected } = useVoiceControl()
 
   return (
     <div className="flex flex-col h-full bg-background">
@@ -62,67 +40,37 @@ export function VoiceInputPage({ onConfirm }: VoiceInputPageProps) {
         </div>
       </div>
 
-      {/* Voice Inputs List */}
-      <div className="flex-1 overflow-auto px-4 py-4">
-        <div className="flex items-center gap-2 mb-4">
+      {/* Voice Input Section Header */}
+      <div className="px-4 py-3">
+        <div className="flex items-center gap-2">
           <Waves className="w-4 h-4 text-primary" />
-          <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">语音识别记录</span>
-        </div>
-        <div className="space-y-2">
-          {inputs.map((input, index) => (
-            <div 
-              key={input.id} 
-              className="group flex items-start gap-3 p-3 bg-card rounded-xl border border-border hover:border-primary/30 transition-colors"
-            >
-              <span className="flex-shrink-0 w-6 h-6 rounded-lg bg-primary/10 flex items-center justify-center text-xs font-semibold text-primary">
-                {index + 1}
-              </span>
-              <p className="flex-1 text-sm text-foreground leading-relaxed">{input.text}</p>
-              <button 
-                onClick={() => handleRemoveInput(input.id)}
-                className="flex-shrink-0 p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-          ))}
+          <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">语音输入</span>
+          {isConnected && (
+            <span className="ml-auto flex items-center gap-1 text-xs text-green-600">
+              <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
+              实时识别中
+            </span>
+          )}
         </div>
       </div>
 
-      {/* Input Area */}
-      <div className="px-4 py-3 border-t border-border bg-card">
-        <div className="flex items-center gap-2">
-          <div className="flex-1 flex items-center bg-secondary rounded-xl px-4 py-3 border border-border focus-within:border-primary/50 transition-colors">
-            <input
-              type="text"
-              value={inputText}
-              onChange={(e) => setInputText(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleAddInput()}
-              placeholder="可录入您需要的配件或工时"
-              className="flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"
-            />
-          </div>
-          <button 
-            onClick={handleAddInput}
-            className="p-3 text-primary hover:bg-primary/10 rounded-xl transition-colors"
-          >
-            <Plus className="w-5 h-5" />
-          </button>
-          <button 
-            onClick={handleMicClick}
-            className={`p-3 rounded-xl transition-all duration-300 ${
-              isRecording 
-                ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/30 animate-pulse' 
-                : 'bg-primary/10 text-primary hover:bg-primary/20'
-            }`}
-          >
-            <Mic className="w-5 h-5" />
-          </button>
-        </div>
+      {/* Voice Session Component */}
+      <div className="flex-1 mx-4 mb-4 bg-card rounded-xl border border-border overflow-hidden flex flex-col">
+        <VoiceSession showTranscript={true} />
       </div>
 
       {/* Confirm Button */}
       <div className="px-4 py-4 bg-card border-t border-border">
+        <div className="flex items-center justify-between mb-3 text-sm">
+          <span className="text-muted-foreground">
+            已识别 <span className="text-primary font-semibold">{transcriptHistory.length}</span> 条记录
+          </span>
+          {isConnected && (
+            <span className="text-xs text-muted-foreground">
+              说"确认"跳转下一步
+            </span>
+          )}
+        </div>
         <Button
           onClick={onConfirm}
           className="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-6 text-base font-semibold rounded-xl shadow-lg shadow-primary/20 transition-all hover:shadow-xl hover:shadow-primary/30"
