@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef } from 'react'
 import { Search, ScanLine, ChevronDown, Image as ImageIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { vehicleBrands, demoVehicle, type VehicleBrand, type VehicleSeries } from '@/lib/work-order-data'
@@ -13,6 +13,8 @@ interface HomePageProps {
 export function HomePage({ onVinSearch, onManualSelect }: HomePageProps) {
   const [vinInput, setVinInput] = useState('')
   const [isScanning, setIsScanning] = useState(false)
+  const [selectedImage, setSelectedImage] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   
   // Cascading dropdown state
   const [selectedBrand, setSelectedBrand] = useState<VehicleBrand | null>(null)
@@ -36,17 +38,36 @@ export function HomePage({ onVinSearch, onManualSelect }: HomePageProps) {
     }
   }, [handleVinSearch])
 
-  // Mock VIN scan - simulates OCR by returning a fixed BMW VIN
-  const handleScanVin = useCallback(() => {
-    setIsScanning(true)
-    // Simulate scanning delay
-    setTimeout(() => {
-      // Return demo BMW VIN
-      setVinInput(demoVehicle.vin)
-      setIsScanning(false)
-      // Auto-search after scan
-      onVinSearch(demoVehicle.vin)
-    }, 1500)
+  // Open file picker when scan button is clicked
+  const handleScanClick = useCallback(() => {
+    fileInputRef.current?.click()
+  }, [])
+
+  // Handle image selection and mock OCR
+  const handleImageSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      // Show selected image preview
+      const reader = new FileReader()
+      reader.onload = (event) => {
+        setSelectedImage(event.target?.result as string)
+      }
+      reader.readAsDataURL(file)
+      
+      // Start mock OCR scanning
+      setIsScanning(true)
+      setTimeout(() => {
+        // Mock OCR result - return demo BMW VIN
+        setVinInput(demoVehicle.vin)
+        setIsScanning(false)
+        // Auto-search after scan
+        onVinSearch(demoVehicle.vin)
+        // Reset selected image after navigation
+        setSelectedImage(null)
+      }, 2000)
+    }
+    // Reset file input so same file can be selected again
+    e.target.value = ''
   }, [onVinSearch])
 
   const handleBrandSelect = useCallback((brand: VehicleBrand) => {
@@ -104,7 +125,7 @@ export function HomePage({ onVinSearch, onManualSelect }: HomePageProps) {
             
             {/* Scan Button */}
             <button
-              onClick={handleScanVin}
+              onClick={handleScanClick}
               disabled={isScanning}
               className="w-14 h-14 bg-primary text-primary-foreground rounded-xl flex items-center justify-center hover:bg-primary/90 transition-colors disabled:opacity-50"
               title="Scan VIN from image"
@@ -115,12 +136,40 @@ export function HomePage({ onVinSearch, onManualSelect }: HomePageProps) {
                 <ScanLine className="w-6 h-6" />
               )}
             </button>
+            
+            {/* Hidden file input for image selection */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleImageSelect}
+              className="hidden"
+            />
           </div>
+          
+          {/* Image preview when scanning */}
+          {selectedImage && (
+            <div className="mt-3 relative">
+              <div className="rounded-xl overflow-hidden border border-border">
+                <img 
+                  src={selectedImage} 
+                  alt="Selected VIN image" 
+                  className="w-full h-32 object-cover"
+                />
+                {isScanning && (
+                  <div className="absolute inset-0 bg-background/80 flex flex-col items-center justify-center gap-2">
+                    <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                    <p className="text-sm text-foreground">Recognizing VIN...</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
           
           {/* Scan hint */}
           <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
             <ImageIcon className="w-3 h-3" />
-            Tap scan icon to capture VIN from image (OCR)
+            Tap scan icon to select image for VIN recognition (OCR)
           </p>
         </div>
 
