@@ -27,13 +27,13 @@ export function VoiceSession({ className = '', showTranscript = true, compact = 
   const getStatusText = () => {
     switch (status) {
       case 'connecting':
-        return '正在连接...'
+        return 'Connecting...'
       case 'connected':
-        return '已连接 - 请说话'
+        return 'Connected - Speak now'
       case 'error':
-        return error || '连接错误'
+        return error || 'Connection error'
       default:
-        return '点击麦克风开始'
+        return 'Tap microphone to start'
     }
   }
 
@@ -98,7 +98,7 @@ export function VoiceSession({ className = '', showTranscript = true, compact = 
         {status === 'connected' && (
           <div className="flex items-center gap-1">
             <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-            <span className="text-xs text-green-600">录音中</span>
+            <span className="text-xs text-green-600">Recording</span>
           </div>
         )}
       </div>
@@ -108,7 +108,7 @@ export function VoiceSession({ className = '', showTranscript = true, compact = 
         <div className="flex-1 overflow-auto p-4 min-h-[120px] max-h-[200px] bg-secondary/30">
           {transcriptHistory.length === 0 && !transcript ? (
             <p className="text-sm text-muted-foreground text-center py-4">
-              {status === 'connected' ? '请说出您的维修需求...' : '点击下方麦克风开始语音输入'}
+              {status === 'connected' ? 'Describe your repair requirements...' : 'Tap the microphone below to start voice input'}
             </p>
           ) : (
             <div className="space-y-2">
@@ -178,10 +178,10 @@ export function VoiceSession({ className = '', showTranscript = true, compact = 
       <div className="px-4 py-2 text-center">
         <p className="text-xs text-muted-foreground">
           {status === 'connected'
-            ? '说"确认"进入下一步，或描述您的维修需求'
+            ? 'Say "confirm" to proceed, or describe your repair requirements'
             : status === 'connecting'
-            ? '正在连接语音服务...'
-            : '点击麦克风开始语音控制'}
+            ? 'Connecting to voice service...'
+            : 'Tap microphone to enable voice control'}
         </p>
       </div>
     </div>

@@ -1,7 +1,7 @@
 'use client'
 
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react'
-import { demoParts, demoLaborItems, type Part, type LaborItem } from './work-order-data'
+import { demoParts, demoLaborItems, type Part, type LaborItem, type VehicleInfo, demoVehicle } from './work-order-data'
 import { useVoiceControl } from './voice-control-context'
 
 // EPC Part definition (matches epc-catalogue-page.tsx)
@@ -20,37 +20,39 @@ export interface EPCPart {
 
 // EPC parts data (shared with epc-catalogue-page.tsx)
 export const epcParts: EPCPart[] = [
-  { id: 'e1', callNo: 1, partNo: '12656876', group: '00.629', position: 'R', description: '活塞套件 ENG (INCLS 54,55) (STD SIZE)', usage: 'CK1 (06) (L84)', year: '2021-2025', qty: 4, price: 580.00 },
-  { id: 'e2', callNo: 1, partNo: '12656877', group: '00.629', position: 'L', description: '活塞套件 ENG (INCL 54,55) (STD SIZE)', usage: 'CK1 (06) (L84)', year: '2021-2025', qty: 4, price: 580.00 },
-  { id: 'e3', callNo: 1, partNo: '12659283', group: '00.629', position: 'L', description: '活塞套件 ENG (INCLS 54,55) (.5MM O/S)', usage: 'CK1 (06) (L84)', year: '2021-2025', qty: 4, price: 620.00 },
-  { id: 'e4', callNo: 1, partNo: '12659284', group: '00.629', position: 'R', description: '活塞套件 ENG (INCLS 54,55) (.5MM O/S)', usage: 'CK1 (06) (L84)', year: '2021-2025', qty: 4, price: 620.00 },
-  { id: 'e5', callNo: 2, partNo: '12691926', group: '00.643', position: '-', description: '活塞环套件 PSTN (STD SIZE)', usage: 'CK1 (06) (L84)', year: '2021-2025', qty: 8, price: 320.00 },
-  { id: 'e6', callNo: 2, partNo: '12691927', group: '00.643', position: '-', description: '活塞环套件 PSTN (.5MM O/S)', usage: 'CK1 (06) (L84)', year: '2021-2025', qty: 1, price: 320.00 },
-  { id: 'e7', callNo: 3, partNo: '12649190', group: '00.603', position: '-', description: '连杆 CONN (INCLS 4)', usage: 'CK1 (06) (L84)', year: '2021-2025', qty: 8, price: 450.00 },
-  { id: 'e8', callNo: 4, partNo: '11570662', group: '00.623', position: '-', description: '连杆螺栓 (3件套) (M9X44,13) (一次性)', usage: 'CK1 (06) (L84)', year: '2021-2025', qty: 16, price: 85.00 },
-  { id: 'e9', callNo: 5, partNo: 'NS', group: '-', position: '-', description: '轴承 CM/SHF (* KIT2)', usage: '-', year: '2021-2025', qty: 1, price: 280.00 },
-  { id: 'e10', callNo: 6, partNo: '12679049', group: '00.539', position: '-', description: '轴承 CM/SHF (位置 #4 (V6) 或 #5 (V8))', usage: 'CK1 (06) (L84,L87)', year: '2021-2025', qty: 1, price: 320.00 },
-  { id: 'e11', callNo: 7, partNo: '01453658', group: '00.685', position: '-', description: '定位销 TRANS LOC (5/8 X 1 3/16)', usage: 'CK1 (06) (L84,MHS)', year: '2023-2025', qty: 2, price: 45.00 },
-  { id: 'e12', callNo: 8, partNo: '12661074', group: '01.531', position: '-', description: '机油道堵塞 ENG BLK OIL GAL (INCLS 9)', usage: 'CK1 (06) (L84,L87)', year: '2021-2025', qty: 1, price: 65.00 },
-  { id: 'e13', callNo: 9, partNo: '12638432', group: '01.531', position: '-', description: '密封圈 ENG BLK OIL GAL PLUG O RING (一次性)', usage: 'CK1 (06)', year: '2021-2025', qty: 1, price: 28.00 },
-  { id: 'e14', callNo: 10, partNo: '11546565', group: '00.056', position: '-', description: '曲轴皮带轮螺栓 CR/SHF BRG CAP (一次性)', usage: 'CK1 (L84,L87)', year: '2023-2025', qty: 10, price: 35.00 },
+  { id: 'e1', callNo: 1, partNo: '12656876', group: '00.629', position: 'R', description: 'PISTON KIT ENG (INCLS 54,55) (STD SIZE)', usage: 'CK1 (06) (L84)', year: '2021-2025', qty: 4, price: 580.00 },
+  { id: 'e2', callNo: 1, partNo: '12656877', group: '00.629', position: 'L', description: 'PISTON KIT ENG (INCL 54,55) (STD SIZE)', usage: 'CK1 (06) (L84)', year: '2021-2025', qty: 4, price: 580.00 },
+  { id: 'e3', callNo: 1, partNo: '12659283', group: '00.629', position: 'L', description: 'PISTON KIT ENG (INCLS 54,55) (.5MM O/S)', usage: 'CK1 (06) (L84)', year: '2021-2025', qty: 4, price: 620.00 },
+  { id: 'e4', callNo: 1, partNo: '12659284', group: '00.629', position: 'R', description: 'PISTON KIT ENG (INCLS 54,55) (.5MM O/S)', usage: 'CK1 (06) (L84)', year: '2021-2025', qty: 4, price: 620.00 },
+  { id: 'e5', callNo: 2, partNo: '12691926', group: '00.643', position: '-', description: 'PISTON RING KIT (STD SIZE)', usage: 'CK1 (06) (L84)', year: '2021-2025', qty: 8, price: 320.00 },
+  { id: 'e6', callNo: 2, partNo: '12691927', group: '00.643', position: '-', description: 'PISTON RING KIT (.5MM O/S)', usage: 'CK1 (06) (L84)', year: '2021-2025', qty: 1, price: 320.00 },
+  { id: 'e7', callNo: 3, partNo: '12649190', group: '00.603', position: '-', description: 'CONNECTING ROD (INCLS 4)', usage: 'CK1 (06) (L84)', year: '2021-2025', qty: 8, price: 450.00 },
+  { id: 'e8', callNo: 4, partNo: '11570662', group: '00.623', position: '-', description: 'CONNECTING ROD BOLT (3PC KIT) (M9X44,13) (SINGLE USE)', usage: 'CK1 (06) (L84)', year: '2021-2025', qty: 16, price: 85.00 },
+  { id: 'e9', callNo: 5, partNo: 'NS', group: '-', position: '-', description: 'BEARING CM/SHF (* KIT2)', usage: '-', year: '2021-2025', qty: 1, price: 280.00 },
+  { id: 'e10', callNo: 6, partNo: '12679049', group: '00.539', position: '-', description: 'BEARING CM/SHF (POSITION #4 (V6) OR #5 (V8))', usage: 'CK1 (06) (L84,L87)', year: '2021-2025', qty: 1, price: 320.00 },
+  { id: 'e11', callNo: 7, partNo: '01453658', group: '00.685', position: '-', description: 'DOWEL PIN TRANS LOC (5/8 X 1 3/16)', usage: 'CK1 (06) (L84,MHS)', year: '2023-2025', qty: 2, price: 45.00 },
+  { id: 'e12', callNo: 8, partNo: '12661074', group: '01.531', position: '-', description: 'OIL GALLERY PLUG ENG BLK (INCLS 9)', usage: 'CK1 (06) (L84,L87)', year: '2021-2025', qty: 1, price: 65.00 },
+  { id: 'e13', callNo: 9, partNo: '12638432', group: '01.531', position: '-', description: 'O-RING SEAL ENG BLK OIL GAL PLUG (SINGLE USE)', usage: 'CK1 (06)', year: '2021-2025', qty: 1, price: 28.00 },
+  { id: 'e14', callNo: 10, partNo: '11546565', group: '00.056', position: '-', description: 'CRANKSHAFT PULLEY BOLT CR/SHF BRG CAP (SINGLE USE)', usage: 'CK1 (L84,L87)', year: '2023-2025', qty: 10, price: 35.00 },
 ]
 
 // Input type for extracted parts from AI
 export interface ExtractedPartInput {
   name: string
-  action: ('更换' | '钣金' | '喷漆')[]
+  action: ('Replace' | 'Body Repair' | 'Paint')[]
   category: string
 }
 
 interface WorkOrderContextType {
   parts: Part[]
   laborItems: LaborItem[]
+  vehicleInfo: VehicleInfo | null
+  setVehicleInfo: (info: VehicleInfo | null) => void
   setParts: (parts: Part[]) => void
   setLaborItems: (items: LaborItem[]) => void
   setExtractedParts: (extractedParts: ExtractedPartInput[]) => void
   togglePartSelection: (id: string) => void
-  togglePartAction: (id: string, action: '更换' | '钣金' | '喷漆') => void
+  togglePartAction: (id: string, action: 'Replace' | 'Body Repair' | 'Paint') => void
   updatePartQuantity: (id: string, quantity: number) => void
   updateLaborHours: (id: string, hours: number) => void
   replacePart: (id: string, newPart: { name: string; partNo: string; price: number }) => void
@@ -77,6 +79,7 @@ const WorkOrderContext = createContext<WorkOrderContextType | undefined>(undefin
 export function WorkOrderProvider({ children }: { children: ReactNode }) {
   const [parts, setParts] = useState<Part[]>(demoParts)
   const [laborItems, setLaborItems] = useState<LaborItem[]>(demoLaborItems)
+  const [vehicleInfo, setVehicleInfo] = useState<VehicleInfo | null>(null)
   const [epcOpen, setEpcOpen] = useState(false)
   const [epcPartId, setEpcPartId] = useState<string | null>(null)
   const [selectedEpcPartId, setSelectedEpcPartId] = useState<string | null>(null)
@@ -117,21 +120,21 @@ export function WorkOrderProvider({ children }: { children: ReactNode }) {
       price: generatePrice(200, 2500),
       quantity: 1,
       category: ep.category || ep.name,
-      actions: ['更换', '钣金', '喷漆'] as const,
-      selectedActions: ep.action.length > 0 ? ep.action : ['更换'],
+      actions: ['Replace', 'Body Repair', 'Paint'] as const,
+      selectedActions: ep.action.length > 0 ? ep.action : ['Replace'],
       selected: true,
     }))
 
     // Generate labor items based on parts and their actions
     const newLaborItems: LaborItem[] = []
     extractedParts.forEach((ep, index) => {
-      const actions = ep.action.length > 0 ? ep.action : ['更换']
+      const actions = ep.action.length > 0 ? ep.action : ['Replace']
       actions.forEach((action, actionIndex) => {
-        const baseHours = action === '更换' ? 1.5 : action === '钣金' ? 2.5 : 2.0
+        const baseHours = action === 'Replace' ? 1.5 : action === 'Body Repair' ? 2.5 : 2.0
         const hours = Math.round((baseHours + Math.random() * 1.5) * 10) / 10
         newLaborItems.push({
           id: `labor-${index + 1}-${actionIndex}`,
-          name: `${ep.name}${action}`,
+          name: `${ep.name} ${action}`,
           hourlyRate: 100,
           hours,
         })
@@ -168,7 +171,7 @@ export function WorkOrderProvider({ children }: { children: ReactNode }) {
     ))
   }, [])
 
-  const togglePartAction = useCallback((id: string, action: '更换' | '钣金' | '喷漆') => {
+  const togglePartAction = useCallback((id: string, action: 'Replace' | 'Body Repair' | 'Paint') => {
     setParts(prev => prev.map(part => {
       if (part.id !== id) return part
       const hasAction = part.selectedActions.includes(action)
@@ -265,7 +268,7 @@ export function WorkOrderProvider({ children }: { children: ReactNode }) {
         return true
       },
 
-      togglePartAction: (partName: string, action: '更换' | '钣金' | '喷漆', enabled?: boolean): boolean => {
+      togglePartAction: (partName: string, action: 'Replace' | 'Body Repair' | 'Paint', enabled?: boolean): boolean => {
         const part = findPartByName(partName)
         if (!part) return false
 
@@ -414,6 +417,8 @@ export function WorkOrderProvider({ children }: { children: ReactNode }) {
     <WorkOrderContext.Provider value={{
       parts,
       laborItems,
+      vehicleInfo,
+      setVehicleInfo,
       setParts,
       setLaborItems,
       setExtractedParts,

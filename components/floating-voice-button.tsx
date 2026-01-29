@@ -30,7 +30,7 @@ export function FloatingVoiceButton({ hints = [] }: FloatingVoiceButtonProps) {
           <div className="flex items-center justify-between px-3 py-2 bg-primary/5 border-b border-border">
             <div className="flex items-center gap-2">
               <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-              <span className="text-xs font-medium text-foreground">语音控制已启用</span>
+              <span className="text-xs font-medium text-foreground">Voice Control Enabled</span>
             </div>
             <button
               onClick={() => setExpanded(false)}
@@ -43,7 +43,7 @@ export function FloatingVoiceButton({ hints = [] }: FloatingVoiceButtonProps) {
           {/* Hints */}
           {hints.length > 0 && (
             <div className="px-3 py-2 border-b border-border bg-secondary/30">
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">可用语音指令</p>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Available Commands</p>
               <div className="flex flex-wrap gap-1">
                 {hints.map((hint, i) => (
                   <span key={i} className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
@@ -58,7 +58,7 @@ export function FloatingVoiceButton({ hints = [] }: FloatingVoiceButtonProps) {
           <div className="max-h-32 overflow-auto p-2">
             {recentTranscripts.length === 0 && !transcript ? (
               <p className="text-xs text-muted-foreground text-center py-2">
-                请说话...
+                Speak now...
               </p>
             ) : (
               <div className="space-y-1">
@@ -121,7 +121,7 @@ export function FloatingVoiceButton({ hints = [] }: FloatingVoiceButtonProps) {
 
       {/* Status text */}
       <div className="text-[10px] text-muted-foreground text-right">
-        {connectionStatus === 'connected' ? '说话中...' : connectionStatus === 'connecting' ? '连接中...' : '点击开启'}
+        {connectionStatus === 'connected' ? 'Listening...' : connectionStatus === 'connecting' ? 'Connecting...' : 'Tap to enable'}
       </div>
     </div>
   )

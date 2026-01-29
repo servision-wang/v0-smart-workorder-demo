@@ -21,7 +21,7 @@ export const toolDefinitions: ToolDefinition[] = [
   {
     type: 'function',
     name: 'click_confirm',
-    description: '点击确认按钮，进入下一步。当用户说"确认"、"下一步"、"好了"、"确定"、"加入工单"、"生成工单"、"提交"时调用',
+    description: 'Click the confirm button to proceed to the next step. Call when user says "confirm", "next", "done", "ok", "add to work order", "generate work order", "submit"',
     parameters: {
       type: 'object',
       properties: {},
@@ -30,7 +30,7 @@ export const toolDefinitions: ToolDefinition[] = [
   {
     type: 'function',
     name: 'go_back',
-    description: '返回上一页。当用户说"返回"、"上一步"、"退回"、"后退"时调用',
+    description: 'Go back to the previous page. Call when user says "back", "previous", "return", "go back"',
     parameters: {
       type: 'object',
       properties: {},
@@ -41,13 +41,13 @@ export const toolDefinitions: ToolDefinition[] = [
   {
     type: 'function',
     name: 'add_repair_items',
-    description: '从用户语音中提取需要维修的配件和操作。当用户描述维修需求时调用，例如"更换前脸"、"左前翼子板钣金喷漆"、"换水箱"',
+    description: 'Extract repair parts and operations from user voice input. Call when user describes repair needs, e.g. "replace front grille", "left fender body repair and paint", "replace radiator"',
     parameters: {
       type: 'object',
       properties: {
         items: {
           type: 'string',
-          description: '用户描述的维修需求原文，例如"更换前脸、电眼、前挡风玻璃"'
+          description: 'Original repair requirements described by user, e.g. "replace front grille, radar sensor, windshield"'
         }
       },
       required: ['items']
@@ -58,17 +58,17 @@ export const toolDefinitions: ToolDefinition[] = [
   {
     type: 'function',
     name: 'toggle_part',
-    description: '选择或取消选择配件。当用户说"选择XX"、"取消XX"、"勾选XX"、"不要XX"时调用',
+    description: 'Select or deselect a part. Call when user says "select XX", "deselect XX", "check XX", "remove XX"',
     parameters: {
       type: 'object',
       properties: {
         part_name: {
           type: 'string',
-          description: '配件名称，如进气格栅、前挡风玻璃、引擎盖、左前大灯、左前翼子板、散热器等'
+          description: 'Part name, e.g. front grille, windshield, hood, left headlight, left fender, radiator'
         },
         selected: {
           type: 'string',
-          description: '是否选中：true表示选中，false表示取消，toggle表示切换',
+          description: 'Selection state: true for selected, false for deselected, toggle to switch',
           enum: ['true', 'false', 'toggle']
         }
       },
@@ -78,22 +78,22 @@ export const toolDefinitions: ToolDefinition[] = [
   {
     type: 'function',
     name: 'set_part_action',
-    description: '设置配件的维修操作（更换、钣金、喷漆）。当用户说"XX更换"、"XX钣金"、"XX喷漆"时调用',
+    description: 'Set repair action for a part (Replace, Body Repair, Paint). Call when user says "replace XX", "body repair XX", "paint XX"',
     parameters: {
       type: 'object',
       properties: {
         part_name: {
           type: 'string',
-          description: '配件名称'
+          description: 'Part name'
         },
         action: {
           type: 'string',
-          description: '维修操作类型',
-          enum: ['更换', '钣金', '喷漆']
+          description: 'Repair action type',
+          enum: ['Replace', 'Body Repair', 'Paint']
         },
         enabled: {
           type: 'string',
-          description: '是否启用该操作：true启用，false禁用，toggle切换',
+          description: 'Enable or disable action: true to enable, false to disable, toggle to switch',
           enum: ['true', 'false', 'toggle']
         }
       },
@@ -103,13 +103,13 @@ export const toolDefinitions: ToolDefinition[] = [
   {
     type: 'function',
     name: 'select_all_parts',
-    description: '选择或取消所有配件。当用户说"全选"、"选择全部"、"取消全部"时调用',
+    description: 'Select or deselect all parts. Call when user says "select all", "check all", "deselect all", "uncheck all"',
     parameters: {
       type: 'object',
       properties: {
         selected: {
           type: 'string',
-          description: '是否全选：true全选，false全部取消',
+          description: 'Selection state: true for all selected, false for all deselected',
           enum: ['true', 'false']
         }
       },
@@ -119,13 +119,13 @@ export const toolDefinitions: ToolDefinition[] = [
   {
     type: 'function',
     name: 'open_epc',
-    description: '打开EPC配件目录查找替换件。当用户说"查找替换件"、"打开EPC"、"查找XX替换"、"替换XX"、"换个XX"、"找个XX替代"时调用',
+    description: 'Open EPC parts catalogue to find replacement parts. Call when user says "find replacement", "open EPC", "find alternative for XX", "replace XX", "find XX substitute"',
     parameters: {
       type: 'object',
       properties: {
         part_name: {
           type: 'string',
-          description: '要查找替换件的配件名称，如进气格栅、前挡风玻璃等'
+          description: 'Part name to find replacement for, e.g. front grille, windshield'
         }
       },
       required: ['part_name']
@@ -136,21 +136,21 @@ export const toolDefinitions: ToolDefinition[] = [
   {
     type: 'function',
     name: 'select_epc_part',
-    description: '在EPC配件目录中选择配件。当用户说"选择第N个"、"选第N行"、"第N个配件"、"帮我选第N个"、"我要第N个"、"给我第N个"、"选择XX配件"、"我要这个"，或者说配件号码（如"12656876"、"一二六五六八七六"）时调用',
+    description: 'Select a part in EPC catalogue. Call when user says "select number N", "select row N", "part number N", "I want number N", or reads part number (e.g. "12656876")',
     parameters: {
       type: 'object',
       properties: {
         call_no: {
           type: 'string',
-          description: '配件的呼叫号（callNo），如"1"、"2"、"3"等。当用户说"选择第一个"、"选第2个"、"第二个配件"、"帮我选第三个"、"我要第二个"、"给我第一个"等表达时使用'
+          description: 'Part call number (callNo), e.g. "1", "2", "3". Use when user says "select first", "select number 2", "the second one", "I want number two"'
         },
         part_no: {
           type: 'string',
-          description: '配件号码（partNo），如"12656876"、"11570662"、"01453658"等。当用户读出一串数字（如"12656876"或"一二六五六八七六"）时使用。注意：用户可能用中文或数字读出号码，需要转换为阿拉伯数字'
+          description: 'Part number (partNo), e.g. "12656876", "11570662", "01453658". Use when user reads out a number sequence'
         },
         description: {
           type: 'string',
-          description: '配件描述关键词，如"活塞"、"连杆"、"轴承"等。当用户说配件名称时使用'
+          description: 'Part description keyword, e.g. "piston", "connecting rod", "bearing". Use when user says part name'
         }
       }
     }
@@ -158,7 +158,7 @@ export const toolDefinitions: ToolDefinition[] = [
   {
     type: 'function',
     name: 'confirm_epc_selection',
-    description: '确认EPC配件选择并替换原配件。当用户说"确认选择"、"就这个"、"确定"、"选好了"时调用',
+    description: 'Confirm EPC part selection and replace original part. Call when user says "confirm selection", "this one", "confirm", "selected"',
     parameters: {
       type: 'object',
       properties: {},
@@ -169,17 +169,17 @@ export const toolDefinitions: ToolDefinition[] = [
   {
     type: 'function',
     name: 'adjust_quantity',
-    description: '调整配件数量。当用户说"XX数量改为N"、"增加XX数量"、"减少XX数量"时调用',
+    description: 'Adjust part quantity. Call when user says "change XX quantity to N", "increase XX quantity", "decrease XX quantity"',
     parameters: {
       type: 'object',
       properties: {
         part_name: {
           type: 'string',
-          description: '配件名称'
+          description: 'Part name'
         },
         quantity: {
           type: 'string',
-          description: '新的数量，或者增减值（如+1、-1）'
+          description: 'New quantity, or adjustment value (e.g. +1, -1)'
         }
       },
       required: ['part_name', 'quantity']
@@ -188,17 +188,17 @@ export const toolDefinitions: ToolDefinition[] = [
   {
     type: 'function',
     name: 'adjust_labor_hours',
-    description: '调整工时。当用户说"XX工时改为N小时"、"增加XX工时"时调用',
+    description: 'Adjust labor hours. Call when user says "change XX hours to N", "increase XX hours"',
     parameters: {
       type: 'object',
       properties: {
         labor_name: {
           type: 'string',
-          description: '工时项目名称'
+          description: 'Labor item name'
         },
         hours: {
           type: 'string',
-          description: '新的工时数，或者增减值'
+          description: 'New hours value, or adjustment value'
         }
       },
       required: ['labor_name', 'hours']
@@ -209,7 +209,7 @@ export const toolDefinitions: ToolDefinition[] = [
   {
     type: 'function',
     name: 'new_order',
-    description: '创建新工单。当用户说"新建工单"、"再来一单"、"重新开始"时调用',
+    description: 'Create a new work order. Call when user says "new work order", "start over", "create new"',
     parameters: {
       type: 'object',
       properties: {},
@@ -218,60 +218,60 @@ export const toolDefinitions: ToolDefinition[] = [
 ]
 
 // System instructions for the AI assistant
-export const systemInstructions = `你是一个汽车售后配件技术信息领域的专家，同时也是智能工单录入助手，帮助用户通过语音录入汽车维修工单。
+export const systemInstructions = `You are an automotive aftermarket parts technical information expert and intelligent work order entry assistant, helping users create automotive repair work orders via voice.
 
-## 你的角色
-- 你是汽车售后配件技术信息领域的专家，熟悉各种汽车配件的名称、功能和维修操作
-- 你正在帮助用户操作一个汽车维修工单录入APP
-- 用户会用中文口语描述维修需求，你需要理解并调用相应的工具
-- 你可以理解各种配件的别名和俗称，如"前脸"指进气格栅、"电眼"指雷达传感器等
+## Your Role
+- You are an expert in automotive aftermarket parts technical information, familiar with various auto part names, functions, and repair operations
+- You are helping users operate an automotive repair work order entry APP
+- Users will describe repair requirements in English, and you need to understand and call appropriate tools
+- You can understand various part aliases and common names
 
-## 规则
+## Rules
 
-### 当用户描述维修需求时
-如果用户说的内容包含配件名称和操作（更换、钣金、喷漆），调用 add_repair_items
-例如：
-- "我需要更换前脸、电眼" → 调用 add_repair_items
-- "左前翼子板钣金喷漆" → 调用 add_repair_items
-- "换个水箱" → 调用 add_repair_items
+### When user describes repair requirements
+If user mentions part names and operations (replace, body repair, paint), call add_repair_items
+Examples:
+- "I need to replace the front grille and radar sensor" → call add_repair_items
+- "Left front fender body repair and paint" → call add_repair_items
+- "Replace the radiator" → call add_repair_items
 
-### 导航控制
-- "确认"、"下一步"、"好了"、"确定"、"继续"、"加入工单"、"生成工单"、"提交" → 调用 click_confirm
-- "返回"、"上一步"、"退回" → 调用 go_back
+### Navigation Control
+- "confirm", "next", "done", "ok", "continue", "add to work order", "generate work order", "submit" → call click_confirm
+- "back", "previous", "return", "go back" → call go_back
 
-### 配件选择（在识别结果页）
-- "选择进气格栅"、"勾选前挡风玻璃" → 调用 toggle_part (selected: true)
-- "取消进气格栅"、"不要前挡风玻璃" → 调用 toggle_part (selected: false)
-- "全选"、"选择全部" → 调用 select_all_parts (selected: true)
-- "取消全部" → 调用 select_all_parts (selected: false)
+### Part Selection (on recognition results page)
+- "select front grille", "check windshield" → call toggle_part (selected: true)
+- "deselect front grille", "remove windshield" → call toggle_part (selected: false)
+- "select all", "check all" → call select_all_parts (selected: true)
+- "deselect all", "uncheck all" → call select_all_parts (selected: false)
 
-### 操作设置
-- "进气格栅钣金" → 调用 set_part_action (action: 钣金)
-- "左前翼子板喷漆" → 调用 set_part_action (action: 喷漆)
+### Action Setting
+- "body repair front grille" → call set_part_action (action: Body Repair)
+- "paint left fender" → call set_part_action (action: Paint)
 
-### 打开EPC配件目录（在识别结果页）
-- "查找进气格栅替换件"、"替换进气格栅"、"换个进气格栅" → 调用 open_epc
-- "打开EPC"、"查找替换件" → 调用 open_epc
+### Open EPC Parts Catalogue (on recognition results page)
+- "find replacement for front grille", "replace front grille", "find alternative" → call open_epc
+- "open EPC", "find replacement" → call open_epc
 
-### EPC配件目录中选择配件
-- "选择第一个"、"选第2个"、"选择第3行"、"第二个配件"、"帮我选第三个"、"第一个"、"我要第二个"、"给我第一个" → 调用 select_epc_part (call_no)
-- "12656876"、"一二六五六八七六"、"配件号12656876"、"我要11570662" → 调用 select_epc_part (part_no)
-- "选择活塞"、"我要连杆"、"选轴承" → 调用 select_epc_part (description)
-- "确认选择"、"就这个"、"选好了" → 调用 confirm_epc_selection
-- "返回" → 调用 go_back（关闭EPC目录）
+### Select Part in EPC Catalogue
+- "select first", "select number 2", "third row", "second part", "I want number three", "give me the first one" → call select_epc_part (call_no)
+- "12656876", "part number 12656876", "I want 11570662" → call select_epc_part (part_no)
+- "select piston", "I want connecting rod", "select bearing" → call select_epc_part (description)
+- "confirm selection", "this one", "selected" → call confirm_epc_selection
+- "back" → call go_back (close EPC catalogue)
 
-### 数量和工时调整（在工单预览页）
-- "进气格栅数量改为2" → 调用 adjust_quantity
-- "前挡风玻璃工时改为3小时" → 调用 adjust_labor_hours
+### Quantity and Hours Adjustment (on work order preview page)
+- "front grille quantity change to 2" → call adjust_quantity
+- "windshield labor 3 hours" → call adjust_labor_hours
 
-### 新建工单（在成功页）
-- "新建工单"、"再来一单" → 调用 new_order
+### New Work Order (on success page)
+- "new work order", "start over" → call new_order
 
-## 回复风格
-- 执行操作后用简短中文确认，如"好的，已确认"、"已选择进气格栅"
-- 如果不确定用户意图，简短询问
-- 保持友好、专业的语气
-- 回复要简洁，不要啰嗦`
+## Response Style
+- Confirm operations briefly, e.g. "OK, confirmed", "Selected front grille"
+- If unsure about user intent, ask briefly
+- Maintain friendly, professional tone
+- Keep responses concise, don't be verbose`
 
 // Helper to get tool by name
 export function getToolByName(name: string): ToolDefinition | undefined {

@@ -8,8 +8,8 @@ const _geist = Geist({ subsets: ["latin"] });
 const _geistMono = Geist_Mono({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: '智能工单录入',
-  description: '智能语音工单录入系统',
+  title: 'Smart Work Order',
+  description: 'Intelligent Voice-Controlled Work Order Entry System',
   generator: 'v0.app',
   icons: {
     icon: [
@@ -36,7 +36,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="zh-CN">
+    <html lang="en">
       <body className={`font-sans antialiased`}>
         {children}
         <Analytics />

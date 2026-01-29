@@ -4,7 +4,7 @@ import { createContext, useContext, useState, useCallback, useRef, useEffect, ty
 import { toolDefinitions, systemInstructions } from './tools-definition'
 
 // Page types matching the app navigation
-export type PageType = 'voice-input' | 'recognition' | 'preview' | 'success'
+export type PageType = 'home' | 'vehicle-info' | 'voice-input' | 'recognition' | 'preview' | 'success'
 
 // Tool call result type
 export interface ToolCallResult {
@@ -56,7 +56,7 @@ interface VoiceControlContextType {
   // Work order handlers (set by WorkOrderProvider)
   workOrderHandlers: {
     togglePartSelection: (partName: string, selected?: boolean) => boolean
-    togglePartAction: (partName: string, action: '更换' | '钣金' | '喷漆', enabled?: boolean) => boolean
+    togglePartAction: (partName: string, action: 'Replace' | 'Body Repair' | 'Paint', enabled?: boolean) => boolean
     selectAllParts: (selected: boolean) => void
     updatePartQuantity: (partName: string, quantity: number | string) => boolean
     updateLaborHours: (laborName: string, hours: number | string) => boolean
@@ -76,7 +76,7 @@ const VoiceControlContext = createContext<VoiceControlContextType | undefined>(u
 
 export function VoiceControlProvider({ children }: { children: ReactNode }) {
   // Page state
-  const [currentPage, setCurrentPage] = useState<PageType>('voice-input')
+  const [currentPage, setCurrentPage] = useState<PageType>('home')
 
   // Transcription state
   const [transcript, setTranscript] = useState('')
@@ -128,17 +128,17 @@ export function VoiceControlProvider({ children }: { children: ReactNode }) {
       // Navigation tools
       case 'click_confirm': {
         navigationHandlersRef.current.onConfirm()
-        return { success: true, message: '好的，已确认' }
+        return { success: true, message: 'OK, confirmed' }
       }
 
       case 'go_back': {
         navigationHandlersRef.current.onBack()
-        return { success: true, message: '好的，已返回' }
+        return { success: true, message: 'OK, going back' }
       }
 
       case 'new_order': {
         navigationHandlersRef.current.onNewOrder()
-        return { success: true, message: '好的，开始新工单' }
+        return { success: true, message: 'OK, starting new work order' }
       }
 
       // Repair items
@@ -146,11 +146,11 @@ export function VoiceControlProvider({ children }: { children: ReactNode }) {
         const items = args.items as string
         if (workOrderHandlersRef.current?.addRepairItems) {
           workOrderHandlersRef.current.addRepairItems(items)
-          return { success: true, message: `已记录：${items}` }
+          return { success: true, message: `Recorded: ${items}` }
         }
         // Even if no handler, still record in transcript
         addToTranscriptHistory(items)
-        return { success: true, message: `已记录：${items}` }
+        return { success: true, message: `Recorded: ${items}` }
       }
 
       // Part selection
@@ -159,7 +159,7 @@ export function VoiceControlProvider({ children }: { children: ReactNode }) {
         const selectedArg = args.selected as string | undefined
 
         if (!workOrderHandlersRef.current?.togglePartSelection) {
-          return { success: false, message: '当前页面无法操作配件' }
+          return { success: false, message: 'Cannot modify parts on current page' }
         }
 
         let selected: boolean | undefined
@@ -169,30 +169,30 @@ export function VoiceControlProvider({ children }: { children: ReactNode }) {
 
         const success = workOrderHandlersRef.current.togglePartSelection(partName, selected)
         if (success) {
-          return { success: true, message: selected === false ? `已取消${partName}` : `已选择${partName}` }
+          return { success: true, message: selected === false ? `Deselected ${partName}` : `Selected ${partName}` }
         }
-        return { success: false, message: `找不到配件：${partName}` }
+        return { success: false, message: `Part not found: ${partName}` }
       }
 
       case 'select_all_parts': {
         const selected = args.selected === 'true'
 
         if (!workOrderHandlersRef.current?.selectAllParts) {
-          return { success: false, message: '当前页面无法操作配件' }
+          return { success: false, message: 'Cannot modify parts on current page' }
         }
 
         workOrderHandlersRef.current.selectAllParts(selected)
-        return { success: true, message: selected ? '已全选' : '已取消全部' }
+        return { success: true, message: selected ? 'All selected' : 'All deselected' }
       }
 
       // Part actions
       case 'set_part_action': {
         const partName = args.part_name as string
-        const action = args.action as '更换' | '钣金' | '喷漆'
+        const action = args.action as 'Replace' | 'Body Repair' | 'Paint'
         const enabledArg = args.enabled as string | undefined
 
         if (!workOrderHandlersRef.current?.togglePartAction) {
-          return { success: false, message: '当前页面无法设置操作' }
+          return { success: false, message: 'Cannot set action on current page' }
         }
 
         let enabled: boolean | undefined
@@ -201,9 +201,9 @@ export function VoiceControlProvider({ children }: { children: ReactNode }) {
 
         const success = workOrderHandlersRef.current.togglePartAction(partName, action, enabled)
         if (success) {
-          return { success: true, message: `已设置${partName}${action}` }
+          return { success: true, message: `Set ${partName} to ${action}` }
         }
-        return { success: false, message: `找不到配件：${partName}` }
+        return { success: false, message: `Part not found: ${partName}` }
       }
 
       // Open EPC catalogue
@@ -211,14 +211,14 @@ export function VoiceControlProvider({ children }: { children: ReactNode }) {
         const partName = args.part_name as string
 
         if (!workOrderHandlersRef.current?.openEpc) {
-          return { success: false, message: '当前页面无法打开EPC目录' }
+          return { success: false, message: 'Cannot open EPC on current page' }
         }
 
         const success = workOrderHandlersRef.current.openEpc(partName)
         if (success) {
-          return { success: true, message: `好的，正在查找${partName}的替换件` }
+          return { success: true, message: `OK, finding replacement for ${partName}` }
         }
-        return { success: false, message: `找不到配件：${partName}` }
+        return { success: false, message: `Part not found: ${partName}` }
       }
 
       // Select EPC part
@@ -228,27 +228,27 @@ export function VoiceControlProvider({ children }: { children: ReactNode }) {
         const description = args.description as string | undefined
 
         if (!workOrderHandlersRef.current?.selectEpcPart) {
-          return { success: false, message: 'EPC目录未打开' }
+          return { success: false, message: 'EPC catalogue not open' }
         }
 
         const result = workOrderHandlersRef.current.selectEpcPart(callNo, partNo, description)
         if (result.success) {
-          return { success: true, message: `好的，已选择${result.partName}` }
+          return { success: true, message: `OK, selected ${result.partName}` }
         }
-        return { success: false, message: '找不到该配件，请说出配件号或名称' }
+        return { success: false, message: 'Part not found, please specify part number or name' }
       }
 
       // Confirm EPC selection
       case 'confirm_epc_selection': {
         if (!workOrderHandlersRef.current?.confirmEpcSelection) {
-          return { success: false, message: 'EPC目录未打开' }
+          return { success: false, message: 'EPC catalogue not open' }
         }
 
         const success = workOrderHandlersRef.current.confirmEpcSelection()
         if (success) {
-          return { success: true, message: '好的，已确认选择并替换' }
+          return { success: true, message: 'OK, selection confirmed and replaced' }
         }
-        return { success: false, message: '请先选择一个配件' }
+        return { success: false, message: 'Please select a part first' }
       }
 
       // Quantity adjustment
@@ -257,14 +257,14 @@ export function VoiceControlProvider({ children }: { children: ReactNode }) {
         const quantity = args.quantity as string
 
         if (!workOrderHandlersRef.current?.updatePartQuantity) {
-          return { success: false, message: '当前页面无法调整数量' }
+          return { success: false, message: 'Cannot adjust quantity on current page' }
         }
 
         const success = workOrderHandlersRef.current.updatePartQuantity(partName, quantity)
         if (success) {
-          return { success: true, message: `已调整${partName}数量` }
+          return { success: true, message: `Adjusted ${partName} quantity` }
         }
-        return { success: false, message: `找不到配件：${partName}` }
+        return { success: false, message: `Part not found: ${partName}` }
       }
 
       // Labor hours adjustment
@@ -273,18 +273,18 @@ export function VoiceControlProvider({ children }: { children: ReactNode }) {
         const hours = args.hours as string
 
         if (!workOrderHandlersRef.current?.updateLaborHours) {
-          return { success: false, message: '当前页面无法调整工时' }
+          return { success: false, message: 'Cannot adjust labor hours on current page' }
         }
 
         const success = workOrderHandlersRef.current.updateLaborHours(laborName, hours)
         if (success) {
-          return { success: true, message: `已调整${laborName}工时` }
+          return { success: true, message: `Adjusted ${laborName} hours` }
         }
-        return { success: false, message: `找不到工时项：${laborName}` }
+        return { success: false, message: `Labor item not found: ${laborName}` }
       }
 
       default:
-        return { success: false, message: `未知工具：${toolName}` }
+        return { success: false, message: `Unknown tool: ${toolName}` }
     }
   }, [addToTranscriptHistory])
 

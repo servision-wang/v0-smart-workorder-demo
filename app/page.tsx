@@ -3,17 +3,21 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { WorkOrderProvider, useWorkOrder, type ExtractedPartInput } from '@/lib/work-order-context'
 import { VoiceControlProvider, useVoiceControl, type PageType } from '@/lib/voice-control-context'
+import { HomePage } from '@/components/home-page'
+import { VehicleInfoPage } from '@/components/vehicle-info-page'
 import { VoiceInputPage } from '@/components/voice-input-page'
 import { RecognitionResultsPage } from '@/components/recognition-results-page'
 import { WorkOrderPreviewPage } from '@/components/work-order-preview-page'
 import { OrderSuccessPage } from '@/components/order-success-page'
 import { ShimmerTransition } from '@/components/shimmer-transition'
+import { demoVehicle, type VehicleInfo } from '@/lib/work-order-data'
 
 function WorkOrderApp() {
-  const [currentPage, setCurrentPage] = useState<PageType>('voice-input')
+  const [currentPage, setCurrentPage] = useState<PageType>('home')
   const [showShimmer, setShowShimmer] = useState(false)
+  const [hasVinInfo, setHasVinInfo] = useState(false)
   const { setCurrentPage: setVoiceCurrentPage, setNavigationHandlers, clearTranscriptHistory, transcriptHistory } = useVoiceControl()
-  const { setExtractedParts } = useWorkOrder()
+  const { setExtractedParts, setVehicleInfo, vehicleInfo } = useWorkOrder()
 
   // Track API completion for coordinating transition
   const extractedPartsRef = useRef<ExtractedPartInput[] | null>(null)
@@ -76,8 +80,49 @@ function WorkOrderApp() {
 
   const handleNewOrder = useCallback(() => {
     clearTranscriptHistory()
+    setVehicleInfo(null)
+    setHasVinInfo(false)
+    setCurrentPage('home')
+  }, [clearTranscriptHistory, setVehicleInfo])
+
+  // Handle VIN search from home page
+  const handleVinSearch = useCallback((vin: string) => {
+    // In a real app, this would call an API to decode VIN
+    // For demo, we use the demo vehicle data
+    setVehicleInfo(demoVehicle)
+    setHasVinInfo(true)
+    setCurrentPage('vehicle-info')
+  }, [setVehicleInfo])
+
+  // Handle manual selection from home page
+  const handleManualSelect = useCallback((brand: string, series: string, model: string) => {
+    // Create minimal vehicle info for manual selection (no VIN)
+    const manualVehicleInfo: VehicleInfo = {
+      vin: '',
+      brand,
+      modelDesignation: `${series} ${model}`,
+      productionDate: '',
+      color: '',
+      upholstery: '',
+      marketSpecification: model,
+      series,
+      body: '',
+      steering: '',
+      doors: 0,
+      engineCode: '',
+      displacement: '',
+      power: 0
+    }
+    setVehicleInfo(manualVehicleInfo)
+    setHasVinInfo(false)
+    // Go directly to voice input (skip vehicle info page)
     setCurrentPage('voice-input')
-  }, [clearTranscriptHistory])
+  }, [setVehicleInfo])
+
+  // Handle continue from vehicle info page
+  const handleContinueFromVehicleInfo = useCallback(() => {
+    setCurrentPage('voice-input')
+  }, [])
 
   // Sync page state with voice control context
   useEffect(() => {
@@ -108,6 +153,16 @@ function WorkOrderApp() {
       onBack: () => {
         // Handle back based on current page
         switch (currentPage) {
+          case 'vehicle-info':
+            setCurrentPage('home')
+            break
+          case 'voice-input':
+            if (hasVinInfo) {
+              setCurrentPage('vehicle-info')
+            } else {
+              setCurrentPage('home')
+            }
+            break
           case 'recognition':
             setCurrentPage('voice-input')
             break
@@ -118,20 +173,36 @@ function WorkOrderApp() {
             setCurrentPage('preview')
             break
           default:
-            // voice-input has no back
+            // home has no back
             break
         }
       },
       onNewOrder: handleNewOrder,
     })
-  }, [currentPage, setNavigationHandlers, handleConfirmVoiceInput, handleNewOrder])
+  }, [currentPage, setNavigationHandlers, handleConfirmVoiceInput, handleNewOrder, hasVinInfo])
 
   const renderPage = () => {
     switch (currentPage) {
+      case 'home':
+        return (
+          <HomePage
+            onVinSearch={handleVinSearch}
+            onManualSelect={handleManualSelect}
+          />
+        )
+      case 'vehicle-info':
+        return vehicleInfo ? (
+          <VehicleInfoPage
+            vehicleInfo={vehicleInfo}
+            onBack={() => setCurrentPage('home')}
+            onContinue={handleContinueFromVehicleInfo}
+          />
+        ) : null
       case 'voice-input':
         return (
           <VoiceInputPage
             onConfirm={handleConfirmVoiceInput}
+            onBack={() => hasVinInfo ? setCurrentPage('vehicle-info') : setCurrentPage('home')}
           />
         )
       case 'recognition':

@@ -3,15 +3,16 @@
 import { CheckCircle, FileText, PlusCircle, ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { FloatingVoiceButton } from '@/components/floating-voice-button'
-import { demoVehicle } from '@/lib/work-order-data'
+import { useWorkOrder } from '@/lib/work-order-context'
 
 interface OrderSuccessPageProps {
   onNewOrder: () => void
 }
 
 export function OrderSuccessPage({ onNewOrder }: OrderSuccessPageProps) {
+  const { vehicleInfo } = useWorkOrder()
   const orderNo = `WO${Date.now().toString().slice(-8)}`
-  const currentTime = new Date().toLocaleString('zh-CN', {
+  const currentTime = new Date().toLocaleString('en-US', {
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
@@ -24,7 +25,7 @@ export function OrderSuccessPage({ onNewOrder }: OrderSuccessPageProps) {
       {/* Header */}
       <div className="flex items-center px-4 py-4 border-b border-border bg-card">
         <div className="w-9" />
-        <h1 className="flex-1 text-center font-semibold text-foreground tracking-tight">工单生成</h1>
+        <h1 className="flex-1 text-center font-semibold text-foreground tracking-tight">Work Order Created</h1>
         <div className="w-9" />
       </div>
 
@@ -38,8 +39,8 @@ export function OrderSuccessPage({ onNewOrder }: OrderSuccessPageProps) {
           </div>
         </div>
         
-        <h2 className="text-2xl font-bold text-foreground mb-2">工单生成成功</h2>
-        <p className="text-muted-foreground text-center mb-8">您的工单已成功生成，可以查看详情或继续创建新工单</p>
+        <h2 className="text-2xl font-bold text-foreground mb-2">Work Order Created Successfully</h2>
+        <p className="text-muted-foreground text-center mb-8">Your work order has been created. You can view details or create a new order.</p>
 
         {/* Order Info Card */}
         <div className="w-full bg-card rounded-2xl border border-border overflow-hidden">
@@ -49,28 +50,32 @@ export function OrderSuccessPage({ onNewOrder }: OrderSuccessPageProps) {
                 <FileText className="w-5 h-5 text-primary" />
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">工单编号</p>
+                <p className="text-xs text-muted-foreground">Work Order No.</p>
                 <p className="text-sm font-bold text-foreground font-mono">{orderNo}</p>
               </div>
             </div>
           </div>
           
           <div className="p-4 space-y-3">
+            {vehicleInfo && (
+              <>
+                <div className="flex justify-between items-center py-2 border-b border-border/50">
+                  <span className="text-sm text-muted-foreground">VIN</span>
+                  <span className="text-sm font-medium text-foreground font-mono">{vehicleInfo.vin}</span>
+                </div>
+                <div className="flex justify-between items-center py-2 border-b border-border/50">
+                  <span className="text-sm text-muted-foreground">Vehicle</span>
+                  <span className="text-sm font-medium text-foreground">{vehicleInfo.brand} {vehicleInfo.modelDesignation}</span>
+                </div>
+              </>
+            )}
             <div className="flex justify-between items-center py-2 border-b border-border/50">
-              <span className="text-sm text-muted-foreground">VIN码</span>
-              <span className="text-sm font-medium text-foreground font-mono">{demoVehicle.vin}</span>
-            </div>
-            <div className="flex justify-between items-center py-2 border-b border-border/50">
-              <span className="text-sm text-muted-foreground">车型</span>
-              <span className="text-sm font-medium text-foreground">{demoVehicle.model}</span>
-            </div>
-            <div className="flex justify-between items-center py-2 border-b border-border/50">
-              <span className="text-sm text-muted-foreground">创建时间</span>
+              <span className="text-sm text-muted-foreground">Created</span>
               <span className="text-sm font-medium text-foreground">{currentTime}</span>
             </div>
             <div className="flex justify-between items-center py-2">
-              <span className="text-sm text-muted-foreground">状态</span>
-              <span className="text-xs font-semibold text-primary bg-primary/10 px-3 py-1 rounded-full">待处理</span>
+              <span className="text-sm text-muted-foreground">Status</span>
+              <span className="text-xs font-semibold text-primary bg-primary/10 px-3 py-1 rounded-full">Pending</span>
             </div>
           </div>
         </div>
@@ -82,7 +87,7 @@ export function OrderSuccessPage({ onNewOrder }: OrderSuccessPageProps) {
           variant="outline"
           className="w-full py-6 text-base font-semibold rounded-xl border-border bg-secondary text-foreground hover:bg-secondary/80 hover:border-primary/30 transition-all group"
         >
-          <span>查看工单详情</span>
+          <span>View Work Order Details</span>
           <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
         </Button>
         <Button
@@ -90,13 +95,13 @@ export function OrderSuccessPage({ onNewOrder }: OrderSuccessPageProps) {
           className="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-6 text-base font-semibold rounded-xl shadow-lg shadow-primary/20 transition-all hover:shadow-xl hover:shadow-primary/30"
         >
           <PlusCircle className="w-5 h-5 mr-2" />
-          新建工单
+          New Work Order
         </Button>
       </div>
 
       {/* Floating Voice Button */}
       <FloatingVoiceButton
-        hints={['新建工单', '再来一单']}
+        hints={['New work order', 'Start over']}
       />
     </div>
   )

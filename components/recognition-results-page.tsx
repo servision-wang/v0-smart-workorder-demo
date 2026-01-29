@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button'
 import { FloatingVoiceButton } from '@/components/floating-voice-button'
 import { useWorkOrder } from '@/lib/work-order-context'
 import { useVoiceControl } from '@/lib/voice-control-context'
-import { demoVehicle } from '@/lib/work-order-data'
 import { EPCCataloguePage } from './epc-catalogue-page'
 
 interface RecognitionResultsPageProps {
@@ -17,6 +16,7 @@ interface RecognitionResultsPageProps {
 export function RecognitionResultsPage({ onBack, onAddToWorkOrder }: RecognitionResultsPageProps) {
   const {
     parts,
+    vehicleInfo,
     togglePartSelection,
     togglePartAction,
     replacePart,
@@ -32,11 +32,11 @@ export function RecognitionResultsPage({ onBack, onAddToWorkOrder }: Recognition
   // Create highlighted description from transcript and extracted parts (using React elements for safety)
   const highlightedElements = useMemo(() => {
     const text = transcriptHistory.join(' ')
-    if (!text.trim()) return [<span key="empty">暂无识别内容</span>]
+    if (!text.trim()) return [<span key="empty">No recognition content</span>]
 
     // Collect all terms to highlight: part names, categories, and actions
     const partTerms = parts.flatMap(p => [p.name, p.category])
-    const actionTerms = ['更换', '钣金', '喷漆', '换', '修', '喷']
+    const actionTerms = ['Replace', 'Body Repair', 'Paint', 'replace', 'repair', 'paint']
     const allTerms = [...new Set([...partTerms, ...actionTerms])]
 
     // Sort by length (longest first) to avoid partial matches
@@ -50,13 +50,14 @@ export function RecognitionResultsPage({ onBack, onAddToWorkOrder }: Recognition
     if (!pattern) return [<span key="text">{text}</span>]
 
     // Split text by matches and create React elements
-    const regex = new RegExp(`(${pattern})`, 'g')
+    const regex = new RegExp(`(${pattern})`, 'gi')
     const segments = text.split(regex)
 
     return segments.map((segment, index) => {
       if (!segment) return null
-      const isAction = actionTerms.includes(segment)
-      const isPart = partTerms.includes(segment)
+      const lowerSegment = segment.toLowerCase()
+      const isAction = actionTerms.some(a => a.toLowerCase() === lowerSegment)
+      const isPart = partTerms.some(p => p.toLowerCase() === lowerSegment)
 
       if (isAction) {
         return <span key={index} className="text-primary font-semibold">{segment}</span>
@@ -98,27 +99,29 @@ export function RecognitionResultsPage({ onBack, onAddToWorkOrder }: Recognition
         <button onClick={onBack} className="p-2 text-muted-foreground hover:text-foreground transition-colors rounded-lg hover:bg-secondary">
           <ChevronLeft className="w-5 h-5" />
         </button>
-        <h1 className="flex-1 text-center font-semibold text-foreground tracking-tight">语音识别结果</h1>
+        <h1 className="flex-1 text-center font-semibold text-foreground tracking-tight">Recognition Results</h1>
         <div className="w-9" />
       </div>
 
       {/* Vehicle Info */}
-      <div className="mx-4 mt-4 p-4 bg-card rounded-xl border border-border">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">车辆</p>
-            <p className="text-sm font-medium text-foreground">{demoVehicle.model}</p>
-            <p className="text-xs text-muted-foreground font-mono mt-0.5">{demoVehicle.vin}</p>
-          </div>
-          <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-            <Sparkles className="w-5 h-5 text-primary" />
+      {vehicleInfo && (
+        <div className="mx-4 mt-4 p-4 bg-card rounded-xl border border-border">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Vehicle</p>
+              <p className="text-sm font-medium text-foreground">{vehicleInfo.brand} {vehicleInfo.modelDesignation}</p>
+              <p className="text-xs text-muted-foreground font-mono mt-0.5">{vehicleInfo.vin}</p>
+            </div>
+            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+              <Sparkles className="w-5 h-5 text-primary" />
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Highlighted Description - Generated from transcript with part name highlighting */}
       <div className="mx-4 mt-3 p-4 bg-card rounded-xl border border-border">
-        <p className="text-xs text-muted-foreground uppercase tracking-wider mb-2">识别内容</p>
+        <p className="text-xs text-muted-foreground uppercase tracking-wider mb-2">Recognition Content</p>
         <p className="text-sm text-foreground leading-relaxed">
           {highlightedElements}
         </p>
@@ -127,8 +130,8 @@ export function RecognitionResultsPage({ onBack, onAddToWorkOrder }: Recognition
       {/* Parts List */}
       <div className="flex-1 overflow-auto px-4 py-4">
         <div className="flex items-center justify-between mb-3">
-          <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">配件列表</span>
-          <span className="text-xs text-muted-foreground">{parts.length} 项</span>
+          <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Parts List</span>
+          <span className="text-xs text-muted-foreground">{parts.length} items</span>
         </div>
         <div className="space-y-2">
           {parts.map((part) => (
@@ -169,7 +172,7 @@ export function RecognitionResultsPage({ onBack, onAddToWorkOrder }: Recognition
                   {/* Action Buttons */}
                   <div className="flex items-center gap-2 mt-3">
                     {part.actions.map((action, actionIndex) => {
-                      // First action (更换) opens EPC catalogue
+                      // First action (Replace) opens EPC catalogue
                       const isReplaceAction = actionIndex === 0
                       return (
                         <button
@@ -203,7 +206,7 @@ export function RecognitionResultsPage({ onBack, onAddToWorkOrder }: Recognition
                 <button
                   onClick={() => handleOpenEPC(part.id)}
                   className="p-2 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg transition-colors group relative"
-                  title="从EPC目录查找替换"
+                  title="Find replacement in EPC catalogue"
                 >
                   <div className="relative">
                     <Search className="w-4 h-4" />
@@ -219,20 +222,20 @@ export function RecognitionResultsPage({ onBack, onAddToWorkOrder }: Recognition
       {/* Footer */}
       <div className="px-4 py-4 border-t border-border bg-card">
         <div className="flex items-center justify-between mb-3">
-          <span className="text-sm text-muted-foreground">已选择 <span className="text-primary font-semibold">{selectedCount}</span> 项</span>
-          <span className="text-xs text-muted-foreground">共 {parts.length} 项</span>
+          <span className="text-sm text-muted-foreground">Selected <span className="text-primary font-semibold">{selectedCount}</span> items</span>
+          <span className="text-xs text-muted-foreground">Total {parts.length} items</span>
         </div>
         <Button
           onClick={onAddToWorkOrder}
           className="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-6 text-base font-semibold rounded-xl shadow-lg shadow-primary/20 transition-all hover:shadow-xl hover:shadow-primary/30"
         >
-          加入工单
+          Add to Work Order
         </Button>
       </div>
 
       {/* Floating Voice Button */}
       <FloatingVoiceButton
-        hints={['选择进气格栅', '替换进气格栅', '全选', '加入工单', '返回']}
+        hints={['Select front grille', 'Replace grille', 'Select all', 'Add to order', 'Back']}
       />
     </div>
   )
