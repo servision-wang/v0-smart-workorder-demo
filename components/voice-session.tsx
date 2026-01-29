@@ -13,7 +13,7 @@ interface VoiceSessionProps {
 
 export function VoiceSession({ className = '', showTranscript = true, compact = false }: VoiceSessionProps) {
   const { transcript, transcriptHistory, isConnected, isListening } = useVoiceControl()
-  const { status, error, connect, disconnect, toggle } = useRealtimeVoice()
+  const { status, error, toggle } = useRealtimeVoice()
   const transcriptEndRef = useRef<HTMLDivElement>(null)
 
   // Auto-scroll to bottom when new transcript appears
@@ -98,7 +98,7 @@ export function VoiceSession({ className = '', showTranscript = true, compact = 
         {status === 'connected' && (
           <div className="flex items-center gap-1">
             <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-            <span className="text-xs text-green-600">Recording</span>
+            <span className="text-xs text-green-600">iFlytek ASR</span>
           </div>
         )}
       </div>
@@ -178,10 +178,10 @@ export function VoiceSession({ className = '', showTranscript = true, compact = 
       <div className="px-4 py-2 text-center">
         <p className="text-xs text-muted-foreground">
           {status === 'connected'
-            ? 'Say "confirm" to proceed, or describe your repair requirements'
+            ? 'Speak now - Real-time speech recognition powered by iFlytek'
             : status === 'connecting'
-            ? 'Connecting to voice service...'
-            : 'Tap microphone to enable voice control'}
+            ? 'Connecting to iFlytek voice service...'
+            : 'Tap microphone to enable voice input'}
         </p>
       </div>
     </div>

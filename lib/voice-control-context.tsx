@@ -1,7 +1,6 @@
 'use client'
 
 import { createContext, useContext, useState, useCallback, useRef, useEffect, type ReactNode } from 'react'
-import { toolDefinitions, systemInstructions } from './tools-definition'
 
 // Page types matching the app navigation
 export type PageType = 'home' | 'vehicle-info' | 'voice-input' | 'recognition' | 'preview' | 'success'
@@ -34,7 +33,7 @@ interface VoiceControlContextType {
   isListening: boolean
   setIsListening: (listening: boolean) => void
 
-  // WebRTC connection management (lifted to context level)
+  // iFlytek WebSocket connection management
   connectionStatus: ConnectionStatus
   connectionError: string | null
   connect: () => Promise<void>
@@ -68,11 +67,29 @@ interface VoiceControlContextType {
   } | null
   setWorkOrderHandlers: (handlers: VoiceControlContextType['workOrderHandlers']) => void
 
-  // Execute tool call
+  // Execute tool call (for voice commands - currently manual parsing)
   executeToolCall: (toolName: string, args: Record<string, unknown>) => ToolCallResult
 }
 
 const VoiceControlContext = createContext<VoiceControlContextType | undefined>(undefined)
+
+// iFlytek transcript segment interface
+interface TranscriptSegment {
+  segId: number
+  text: string
+  isFinal: boolean
+}
+
+// Convert Float32Array to Int16Array (PCM 16-bit)
+function floatTo16BitPCM(float32Array: Float32Array): ArrayBuffer {
+  const buffer = new ArrayBuffer(float32Array.length * 2)
+  const view = new DataView(buffer)
+  for (let i = 0; i < float32Array.length; i++) {
+    const s = Math.max(-1, Math.min(1, float32Array[i]))
+    view.setInt16(i * 2, s < 0 ? s * 0x8000 : s * 0x7fff, true)
+  }
+  return buffer
+}
 
 export function VoiceControlProvider({ children }: { children: ReactNode }) {
   // Page state
@@ -88,11 +105,15 @@ export function VoiceControlProvider({ children }: { children: ReactNode }) {
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('disconnected')
   const [connectionError, setConnectionError] = useState<string | null>(null)
 
-  // WebRTC refs (persist across page transitions)
-  const peerConnectionRef = useRef<RTCPeerConnection | null>(null)
-  const dataChannelRef = useRef<RTCDataChannel | null>(null)
-  const audioElementRef = useRef<HTMLAudioElement | null>(null)
+  // iFlytek WebSocket refs
+  const wsRef = useRef<WebSocket | null>(null)
   const mediaStreamRef = useRef<MediaStream | null>(null)
+  const audioContextRef = useRef<AudioContext | null>(null)
+  const processorRef = useRef<ScriptProcessorNode | null>(null)
+  const segmentsRef = useRef<Map<number, TranscriptSegment>>(new Map())
+  
+  // Current partial transcript for display
+  const currentPartialRef = useRef<string>('')
 
   // Handlers
   const navigationHandlersRef = useRef<VoiceControlContextType['navigationHandlers']>({
@@ -118,6 +139,8 @@ export function VoiceControlProvider({ children }: { children: ReactNode }) {
 
   const clearTranscriptHistory = useCallback(() => {
     setTranscriptHistory([])
+    segmentsRef.current.clear()
+    currentPartialRef.current = ''
   }, [])
 
   // Execute tool calls based on tool name and arguments
@@ -165,7 +188,6 @@ export function VoiceControlProvider({ children }: { children: ReactNode }) {
         let selected: boolean | undefined
         if (selectedArg === 'true') selected = true
         else if (selectedArg === 'false') selected = false
-        // 'toggle' or undefined = toggle
 
         const success = workOrderHandlersRef.current.togglePartSelection(partName, selected)
         if (success) {
@@ -288,93 +310,6 @@ export function VoiceControlProvider({ children }: { children: ReactNode }) {
     }
   }, [addToTranscriptHistory])
 
-  // Handle server events from data channel
-  const handleServerEvent = useCallback((event: Record<string, unknown>) => {
-    const eventType = event.type as string
-
-    switch (eventType) {
-      case 'session.created':
-        console.log('Session created:', event)
-        break
-
-      case 'session.updated':
-        console.log('Session updated:', event)
-        break
-
-      case 'conversation.item.input_audio_transcription.completed': {
-        // User's speech transcribed
-        const transcriptText = event.transcript as string
-        console.log('Transcript:', transcriptText)
-        setTranscript(transcriptText)
-        addToTranscriptHistory(transcriptText)
-        break
-      }
-
-      case 'response.audio_transcript.delta': {
-        // AI response text (streaming)
-        break
-      }
-
-      case 'response.audio_transcript.done': {
-        // AI response text complete
-        const transcriptText = event.transcript as string
-        console.log('AI transcript:', transcriptText)
-        break
-      }
-
-      case 'response.function_call_arguments.done': {
-        // Tool call received
-        const name = event.name as string
-        const callId = event.call_id as string
-        const argsStr = event.arguments as string
-
-        console.log('Tool call:', name, argsStr)
-
-        try {
-          const args = JSON.parse(argsStr || '{}')
-
-          // Execute the tool call
-          const result = executeToolCall(name, args)
-          console.log('Tool result:', result)
-
-          // Send tool result back to OpenAI
-          if (dataChannelRef.current?.readyState === 'open') {
-            // Send function output
-            dataChannelRef.current.send(JSON.stringify({
-              type: 'conversation.item.create',
-              item: {
-                type: 'function_call_output',
-                call_id: callId,
-                output: JSON.stringify(result),
-              }
-            }))
-
-            // Request response (AI will speak confirmation)
-            dataChannelRef.current.send(JSON.stringify({
-              type: 'response.create'
-            }))
-          }
-        } catch (err) {
-          console.error('Tool call error:', err)
-        }
-        break
-      }
-
-      case 'error': {
-        const errorMessage = (event.error as { message?: string })?.message || 'Unknown error'
-        console.error('Server error:', errorMessage)
-        setConnectionError(errorMessage)
-        break
-      }
-
-      default:
-        // Log other events for debugging
-        if (eventType.startsWith('response.') || eventType.startsWith('conversation.')) {
-          // console.log('Event:', eventType, event)
-        }
-    }
-  }, [addToTranscriptHistory, executeToolCall])
-
   // Update status helper
   const updateStatus = useCallback((newStatus: ConnectionStatus) => {
     setConnectionStatus(newStatus)
@@ -382,175 +317,244 @@ export function VoiceControlProvider({ children }: { children: ReactNode }) {
     setIsListening(newStatus === 'connected')
   }, [])
 
-  // Connect to OpenAI Realtime API
+  // Parse iFlytek response and extract text
+  const parseTranscriptResult = useCallback((data: string) => {
+    try {
+      const result = JSON.parse(data)
+      
+      if (result.action === 'started') {
+        console.log('[iFlytek] Session started:', result.sid)
+        return
+      }
+      
+      if (result.action === 'error') {
+        console.error('[iFlytek] Error:', result.code, result.desc)
+        setConnectionError(`Error ${result.code}: ${result.desc}`)
+        return
+      }
+      
+      if (result.action === 'result' && result.data) {
+        // Parse the nested JSON in data field
+        const dataObj = JSON.parse(result.data)
+        
+        // Extract text from the complex structure
+        // Structure: cn.st.rt[].ws[].cw[].w
+        if (dataObj.cn?.st?.rt) {
+          let text = ''
+          const isFinal = dataObj.cn.st.type === '0' // type 0 = final, 1 = intermediate
+          const segId = dataObj.seg_id || 0
+          
+          for (const rt of dataObj.cn.st.rt) {
+            for (const ws of rt.ws || []) {
+              for (const cw of ws.cw || []) {
+                // wp: n=normal word, p=punctuation, s=smoothing word (filler)
+                if (cw.w && cw.wp !== 's') {
+                  text += cw.w
+                }
+              }
+            }
+          }
+          
+          if (text) {
+            // Store segment
+            segmentsRef.current.set(segId, { segId, text, isFinal })
+            
+            if (isFinal) {
+              // Final result - add to history
+              addToTranscriptHistory(text)
+              currentPartialRef.current = ''
+              setTranscript('')
+            } else {
+              // Partial result - update current transcript
+              currentPartialRef.current = text
+              setTranscript(text)
+            }
+            
+            console.log(`[iFlytek] Transcript (${isFinal ? 'final' : 'partial'}, seg ${segId}):`, text)
+          }
+        }
+      }
+    } catch (err) {
+      console.error('[iFlytek] Failed to parse response:', err, data)
+    }
+  }, [addToTranscriptHistory])
+
+  // Connect to iFlytek WebSocket
   const connect = useCallback(async () => {
-    if (peerConnectionRef.current) {
-      console.log('Already connected')
+    if (wsRef.current) {
+      console.log('[iFlytek] Already connected')
       return
     }
 
     try {
       updateStatus('connecting')
       setConnectionError(null)
+      segmentsRef.current.clear()
 
-      // 1. Get ephemeral token from our API
-      console.log('Fetching session token...')
-      const tokenRes = await fetch('/api/realtime/session')
-      if (!tokenRes.ok) {
-        throw new Error('Failed to get session token')
+      // 1. Get auth URL from our API
+      console.log('[iFlytek] Fetching authentication...')
+      const authRes = await fetch('/api/xfyun/auth')
+      if (!authRes.ok) {
+        throw new Error('Failed to get iFlytek authentication')
       }
-      const sessionData = await tokenRes.json()
-      const ephemeralKey = sessionData.client_secret?.value
-
-      if (!ephemeralKey) {
-        throw new Error('No ephemeral key in response')
-      }
-
-      console.log('Got session token, creating peer connection...')
-
-      // 2. Create peer connection
-      const pc = new RTCPeerConnection()
-      peerConnectionRef.current = pc
-
-      // 3. Set up audio output (AI speaks)
-      const audioEl = document.createElement('audio')
-      audioEl.autoplay = true
-      audioElementRef.current = audioEl
-
-      pc.ontrack = (e) => {
-        console.log('Received audio track')
-        audioEl.srcObject = e.streams[0]
-      }
-
-      // 4. Add microphone input
-      console.log('Requesting microphone access...')
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true,
-        }
-      })
-      mediaStreamRef.current = stream
-      pc.addTrack(stream.getTracks()[0])
-
-      // 5. Set up data channel for events
-      const dc = pc.createDataChannel('oai-events')
-      dataChannelRef.current = dc
-
-      dc.onopen = () => {
-        console.log('Data channel open, configuring session...')
-
-        // Configure session with tools and instructions
-        dc.send(JSON.stringify({
-          type: 'session.update',
-          session: {
-            modalities: ['text', 'audio'],
-            instructions: systemInstructions,
-            voice: 'alloy',
-            input_audio_format: 'pcm16',
-            output_audio_format: 'pcm16',
-            input_audio_transcription: {
-              model: 'whisper-1'
-            },
-            turn_detection: {
-              type: 'server_vad',
-              threshold: 0.5,
-              prefix_padding_ms: 300,
-              silence_duration_ms: 500,
-            },
-            tools: toolDefinitions,
-          }
-        }))
-
-        updateStatus('connected')
-      }
-
-      dc.onmessage = (e) => {
+      const authData = await authRes.json()
+      
+      console.log('[iFlytek] Connecting to WebSocket...')
+      
+      // 2. Create WebSocket connection
+      const ws = new WebSocket(authData.url)
+      wsRef.current = ws
+      
+      ws.onopen = async () => {
+        console.log('[iFlytek] WebSocket connected')
+        
+        // 3. Start microphone capture
         try {
-          const eventData = JSON.parse(e.data)
-          handleServerEvent(eventData)
-        } catch (err) {
-          console.error('Failed to parse event:', err)
+          console.log('[iFlytek] Requesting microphone access...')
+          const stream = await navigator.mediaDevices.getUserMedia({
+            audio: {
+              channelCount: 1,
+              sampleRate: 16000,
+              echoCancellation: true,
+              noiseSuppression: true,
+            }
+          })
+          mediaStreamRef.current = stream
+          
+          // Create AudioContext with 16kHz sample rate
+          const audioContext = new AudioContext({ sampleRate: 16000 })
+          audioContextRef.current = audioContext
+          
+          const source = audioContext.createMediaStreamSource(stream)
+          
+          // Create processor node
+          const processor = audioContext.createScriptProcessor(2048, 1, 1)
+          processorRef.current = processor
+          
+          let audioBuffer: Int16Array[] = []
+          let bufferLength = 0
+          const chunkSize = 1280 // ~40ms of 16kHz mono audio (1280 samples = 80ms, but we send bytes, so 1280 bytes = 640 samples = 40ms)
+          
+          processor.onaudioprocess = (e) => {
+            if (ws.readyState !== WebSocket.OPEN) return
+            
+            const inputData = e.inputBuffer.getChannelData(0)
+            const pcmData = floatTo16BitPCM(inputData)
+            const int16Data = new Int16Array(pcmData)
+            
+            audioBuffer.push(int16Data)
+            bufferLength += int16Data.length * 2 // length in bytes
+            
+            // Send in chunks of 1280 bytes (as per iFlytek spec: 40ms at 16kHz)
+            while (bufferLength >= chunkSize) {
+              // Combine buffer into one array
+              const totalSamples = Math.floor(bufferLength / 2)
+              const combined = new Int16Array(totalSamples)
+              let offset = 0
+              for (const chunk of audioBuffer) {
+                combined.set(chunk, offset)
+                offset += chunk.length
+              }
+              
+              // Extract chunk to send (chunkSize bytes = chunkSize/2 samples)
+              const samplesToSend = Math.floor(chunkSize / 2)
+              const toSend = combined.slice(0, samplesToSend)
+              ws.send(toSend.buffer)
+              
+              // Keep remainder
+              const remainder = combined.slice(samplesToSend)
+              audioBuffer = remainder.length > 0 ? [remainder] : []
+              bufferLength = remainder.length * 2
+            }
+          }
+          
+          source.connect(processor)
+          processor.connect(audioContext.destination)
+          
+          updateStatus('connected')
+          console.log('[iFlytek] Audio capture started')
+          
+        } catch (micError) {
+          console.error('[iFlytek] Microphone error:', micError)
+          throw new Error('Failed to access microphone')
         }
       }
-
-      dc.onclose = () => {
-        console.log('Data channel closed')
+      
+      ws.onmessage = (event) => {
+        parseTranscriptResult(event.data)
+      }
+      
+      ws.onerror = (event) => {
+        console.error('[iFlytek] WebSocket error:', event)
+        setConnectionError('WebSocket connection error')
+      }
+      
+      ws.onclose = (event) => {
+        console.log('[iFlytek] WebSocket closed:', event.code, event.reason)
         updateStatus('disconnected')
-      }
-
-      dc.onerror = (e) => {
-        console.error('Data channel error:', e)
-        setConnectionError('Data channel error')
-      }
-
-      // 6. Create and send SDP offer
-      console.log('Creating SDP offer...')
-      const offer = await pc.createOffer()
-      await pc.setLocalDescription(offer)
-
-      // 7. Send offer to OpenAI and get answer
-      console.log('Sending offer to OpenAI...')
-      const sdpResponse = await fetch(
-        'https://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview-2024-12-17',
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${ephemeralKey}`,
-            'Content-Type': 'application/sdp',
-          },
-          body: offer.sdp,
+        
+        // Clean up audio
+        if (processorRef.current) {
+          processorRef.current.disconnect()
+          processorRef.current = null
         }
-      )
-
-      if (!sdpResponse.ok) {
-        const errorText = await sdpResponse.text()
-        throw new Error(`SDP exchange failed: ${errorText}`)
+        if (audioContextRef.current) {
+          audioContextRef.current.close()
+          audioContextRef.current = null
+        }
+        if (mediaStreamRef.current) {
+          mediaStreamRef.current.getTracks().forEach(track => track.stop())
+          mediaStreamRef.current = null
+        }
+        wsRef.current = null
       }
-
-      // 8. Set remote description
-      const answerSdp = await sdpResponse.text()
-      await pc.setRemoteDescription({ type: 'answer', sdp: answerSdp })
-      console.log('WebRTC connection established')
-
+      
     } catch (err) {
-      console.error('Connection error:', err)
+      console.error('[iFlytek] Connection error:', err)
       const errorMessage = err instanceof Error ? err.message : 'Connection failed'
       setConnectionError(errorMessage)
       updateStatus('error')
       disconnect()
     }
-  }, [updateStatus, handleServerEvent])
+  }, [updateStatus, parseTranscriptResult])
 
-  // Disconnect from OpenAI
+  // Disconnect from iFlytek
   const disconnect = useCallback(() => {
-    console.log('Disconnecting...')
-
-    // Close data channel
-    if (dataChannelRef.current) {
-      dataChannelRef.current.close()
-      dataChannelRef.current = null
+    console.log('[iFlytek] Disconnecting...')
+    
+    // Send end signal
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      try {
+        // Send end marker as binary (JSON encoded)
+        const endSignal = new TextEncoder().encode(JSON.stringify({ end: true }))
+        wsRef.current.send(endSignal)
+      } catch (e) {
+        console.error('[iFlytek] Failed to send end signal:', e)
+      }
     }
-
-    // Close peer connection
-    if (peerConnectionRef.current) {
-      peerConnectionRef.current.close()
-      peerConnectionRef.current = null
+    
+    // Close WebSocket
+    if (wsRef.current) {
+      wsRef.current.close()
+      wsRef.current = null
     }
-
-    // Stop media stream
+    
+    // Stop audio processing
+    if (processorRef.current) {
+      processorRef.current.disconnect()
+      processorRef.current = null
+    }
+    
+    if (audioContextRef.current) {
+      audioContextRef.current.close()
+      audioContextRef.current = null
+    }
+    
     if (mediaStreamRef.current) {
       mediaStreamRef.current.getTracks().forEach(track => track.stop())
       mediaStreamRef.current = null
     }
-
-    // Clean up audio element
-    if (audioElementRef.current) {
-      audioElementRef.current.srcObject = null
-      audioElementRef.current = null
-    }
-
+    
     updateStatus('disconnected')
     setConnectionError(null)
   }, [updateStatus])
@@ -564,7 +568,7 @@ export function VoiceControlProvider({ children }: { children: ReactNode }) {
     }
   }, [connectionStatus, connect, disconnect])
 
-  // Cleanup on provider unmount (app close)
+  // Cleanup on provider unmount
   useEffect(() => {
     return () => {
       disconnect()
